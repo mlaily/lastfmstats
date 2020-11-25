@@ -23,18 +23,33 @@ let execute () =
     let fetchPage = fetchForUser batchSize
     let rec loop page =
         asyncSeq {
-            let! currentData = fetchPage page |> Async.AwaitPromise
-            let actualLimit = currentData.recenttracks.``@attr``.perPage |> int
-            let totalPages = currentData.recenttracks.``@attr``.totalPages |> int
-            let currentPage = currentData.recenttracks.``@attr``.page |> int
+            let! data = fetchPage page |> Async.AwaitPromise
+            let totalPages = data.recenttracks.``@attr``.totalPages |> int
+            let totalTracks = data.recenttracks.``@attr``.total |> int
+            let tracksPerPage = data.recenttracks.``@attr``.perPage |> int
+            let currentPage = data.recenttracks.``@attr``.page |> int
 
-            outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br> {currentPage}/{totalPages}" 
-            yield currentData
+            let refinedData =
+                data.recenttracks.track
+                |> Array.where (fun x -> try x.``@attr``.nowplaying.ToUpperInvariant() = "FALSE" with | _ -> true)
+                // Alternative implementation with null check:
+                    ///// Null check chaining:
+                    //let inline (>>?) f g = f >> Option.bind (g >> Option.ofObj)
+
+                    //|> Array.where
+                    //    (Option.ofObj
+                    //    >>? (fun x -> x.``@attr``)
+                    //    >>? (fun x -> x.nowplaying)
+                    //    >> Option.map (fun x -> System.Convert.ToBoolean(x))
+                    //    >> Option.defaultValue true)
+
+            outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br> {currentPage}/{totalPages} refined count: {refinedData.Length}" 
+            yield refinedData
             if currentPage > 1 then yield! loop (page - 1) // Recurse from oldest page (totalPages) to first page (1)
         }
     promise {
-        let! queryMetadata = fetchPage 1
-        let totalPages = queryMetadata.recenttracks.``@attr``.totalPages |> int
+        let! data = fetchPage 1 // Only used for the total pages number (used as the initial page)
+        let totalPages = data.recenttracks.``@attr``.totalPages |> int
         return loop totalPages
     }
 

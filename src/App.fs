@@ -18,15 +18,17 @@ let fetchForUser limit page =
             outputHtml.textContent <- $"{error.Response.StatusText} ({error.Response.Status}) - {error.Body}"
             failwith "Error while fetching tracks!")
 
+let logToHtml msg = outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br>{msg}" 
+
 let batchSize = 100
 let fetchAllTracks () =
     let fetchPage = fetchForUser batchSize
     let rec fetchAllTracks' page =
         asyncSeq {
             let! data = fetchPage page |> Async.AwaitPromise
-            let totalPages = data.recenttracks.``@attr``.totalPages |> int
-            let totalTracks = data.recenttracks.``@attr``.total |> int
-            let tracksPerPage = data.recenttracks.``@attr``.perPage |> int
+            //let totalPages = data.recenttracks.``@attr``.totalPages |> int
+            //let totalTracks = data.recenttracks.``@attr``.total |> int
+            //let tracksPerPage = data.recenttracks.``@attr``.perPage |> int
             let currentPage = data.recenttracks.``@attr``.page |> int
 
             let refinedData =
@@ -35,12 +37,13 @@ let fetchAllTracks () =
             
             for track in refinedData do yield track
 
-            outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br> {currentPage}/{totalPages} refined count: {refinedData.Length}" 
+            logToHtml $"Page {currentPage} - {refinedData.Length} tracks." 
             if currentPage > 1 then yield! fetchAllTracks' (page - 1) // Recurse from oldest page (totalPages) to first page (1)
         }
     promise {
         let! data = fetchPage 1 // Only used for the total pages number (used as the initial page)
         let totalPages = data.recenttracks.``@attr``.totalPages |> int
+        logToHtml $"Enumerating pages from {totalPages} to 1..."
         return fetchAllTracks' totalPages
     }
 
@@ -50,6 +53,6 @@ myButton.onclick <- fun _ ->
     fetchAllTracks()
     |> Promise.map (fun asyncSeq -> 
         asyncSeq
-        |> AsyncSeq.iter (fun track ->  outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br>    {track.name} - {track.artist.``#text``}")
+        |> AsyncSeq.iter (fun track ->  logToHtml $"{track.name} - {track.artist.``#text``}")
         |> Async.StartAsPromise)
     

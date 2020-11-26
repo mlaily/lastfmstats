@@ -19,9 +19,9 @@ let fetchForUser limit page =
             failwith "Error while fetching tracks!")
 
 let batchSize = 100
-let execute () =
+let fetchAllTracks () =
     let fetchPage = fetchForUser batchSize
-    let rec loop page =
+    let rec fetchAllTracks' page =
         asyncSeq {
             let! data = fetchPage page |> Async.AwaitPromise
             let totalPages = data.recenttracks.``@attr``.totalPages |> int
@@ -32,31 +32,24 @@ let execute () =
             let refinedData =
                 data.recenttracks.track
                 |> Array.where (fun x -> try x.``@attr``.nowplaying.ToUpperInvariant() = "FALSE" with | _ -> true)
-                // Alternative implementation with null check:
-                    ///// Null check chaining:
-                    //let inline (>>?) f g = f >> Option.bind (g >> Option.ofObj)
-
-                    //|> Array.where
-                    //    (Option.ofObj
-                    //    >>? (fun x -> x.``@attr``)
-                    //    >>? (fun x -> x.nowplaying)
-                    //    >> Option.map (fun x -> System.Convert.ToBoolean(x))
-                    //    >> Option.defaultValue true)
+            
+            for track in refinedData do yield track
 
             outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br> {currentPage}/{totalPages} refined count: {refinedData.Length}" 
-            yield refinedData
-            if currentPage > 1 then yield! loop (page - 1) // Recurse from oldest page (totalPages) to first page (1)
+            if currentPage > 1 then yield! fetchAllTracks' (page - 1) // Recurse from oldest page (totalPages) to first page (1)
         }
     promise {
         let! data = fetchPage 1 // Only used for the total pages number (used as the initial page)
         let totalPages = data.recenttracks.``@attr``.totalPages |> int
-        return loop totalPages
+        return fetchAllTracks' totalPages
     }
 
+
 myButton.onclick <- fun _ ->
-    execute()
-    |> Promise.map (fun seq -> 
-        seq
-        |> AsyncSeq.iter ignore
+    myButton.disabled <- true
+    fetchAllTracks()
+    |> Promise.map (fun asyncSeq -> 
+        asyncSeq
+        |> AsyncSeq.iter (fun track ->  outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br>    {track.name} - {track.artist.``#text``}")
         |> Async.StartAsPromise)
     

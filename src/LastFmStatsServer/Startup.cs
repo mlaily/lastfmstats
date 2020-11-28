@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -31,6 +32,9 @@ namespace LastFmStatsServer
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "LastFmStatsServer", Version = "v1" });
             });
+
+            services.AddDbContext<MainContext>(options => options.UseSqlite("Data Source=main.db"));
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

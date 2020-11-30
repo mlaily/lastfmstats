@@ -75,6 +75,10 @@ type GetRecentTracksJson = Fable.JsonProvider.Generator<"""
           "#text": "Whities 006"
         },
         "streamable": "0",
+        "date": {
+        "uts": "1606246277",
+        "#text": "24 Nov 2020, 19:31"
+        }
         "url": "https://www.last.fm/music/Avalon+Emerson/_/The+Frontier",
         "name": "The Frontier",
         "image": [
@@ -220,10 +224,13 @@ type GetRecentTracksJson = Fable.JsonProvider.Generator<"""
 }
 """>
 
-let private fetchJson url parser =
+/// Fetch.fetch throws on non 200 status codes
+let saneFetch url props = GlobalFetch.fetch (RequestInfo.Url url, requestProps props)
+
+let private fetchJson url props parser =
     promise {
         try
-            let! response = GlobalFetch.fetch (RequestInfo.Url url, requestProps [])
+            let! response = saneFetch url props
             let! body = response.text()
             if response.Ok then
                 let parsed = parser body // Ignore exceptions here for now
@@ -235,6 +242,6 @@ let private fetchJson url parser =
 let fetchTracks (username: string) (limit: int) (page: int) =
     promise {
         let url = $"https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user={username}&api_key=b7cced3953cbc4d6c7404dfcdaaae5fc&from=1&format=json&limit={limit}&page={page}"
-        let! result = fetchJson url GetRecentTracksJson
+        let! result = fetchJson url [] GetRecentTracksJson
         return result
     }

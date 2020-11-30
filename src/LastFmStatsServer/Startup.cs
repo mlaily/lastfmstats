@@ -49,6 +49,8 @@ namespace LastFmStatsServer
 
             app.UseRouting();
 
+            app.UseCors(x => x.AllowAnyOrigin().AllowAnyHeader().WithMethods("GET", "POST", "OPTIONS"));
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

@@ -1,12 +1,15 @@
 {
   "private": true,
   "scripts": {
-    "start": "dotnet fable watch src --verbose --runWatch webpack serve",
+    "start": "dotnet fable watch src --verbose --sourceMaps --runWatch webpack serve",
     "build": "dotnet fable src --verbose --run webpack --mode production"
   },
   "dependencies": {
     "webpack": "^5.14.0",
     "webpack-cli": "^4.3.1",
     "webpack-dev-server": "^3.11.2"
+  },
+  "devDependencies": {
+    "source-map-loader": "^1.1.3"
   }
 }

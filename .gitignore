@@ -1,2 +1,4 @@
 /src/ClientApp/src/*.fs.js
 /src/ClientApp/public/bundle.js
+*.fs.js
+*.fs.js.map

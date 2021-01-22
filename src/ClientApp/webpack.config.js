@@ -15,5 +15,15 @@ module.exports = {
         publicPath: "/",
         contentBase: "./public",
         port: 8080,
-    }
+    },
+// https://github.com/MangelMaxime/fulma-demo/blob/3d7ad93234364bc40701d5b288e8ed3de12522be/webpack.config.js#L115-L119
+	module: {
+		rules: [
+			{
+                test: /\.js$/,
+                enforce: "pre",
+                use: ["source-map-loader"],
+            }
+		]
+	}
 }

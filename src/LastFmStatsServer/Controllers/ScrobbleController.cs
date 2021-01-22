@@ -22,7 +22,7 @@ namespace LastFmStatsServer.Controllers
         [HttpPost("{userName}")]
         public IActionResult Post(string userName, ScrobbleData[] data)
         {
-            return new JsonResult(data);
+            return new JsonResult(new { SavedCount = data.Length });
         }
     }
 }

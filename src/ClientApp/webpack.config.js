@@ -15,11 +15,5 @@ module.exports = {
         publicPath: "/",
         contentBase: "./public",
         port: 8080,
-    },
-    module: {
-        rules: [{
-            test: /\.fs(x|proj)?$/,
-            use: "fable-loader"
-        }]
     }
 }

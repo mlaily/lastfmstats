@@ -74,6 +74,8 @@ let postScrobbles userName (scrobbles: ScrobbleData[]) =
                     RequestProperties.Body <| unbox(jsonBody)
                     ]
         logToHtml result.Status
+        let! responseText = result.text()
+        logToHtml responseText
         ()
     }
 

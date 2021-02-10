@@ -59,7 +59,7 @@ namespace LastFmStatsServer
     public partial class Scrobble
     {
         public long Id { get; set; }
-        public DateTimeOffset TimePlayed { get; set; }
+        public long Timestamp { get; set; }
         public long UserId { get; set; }
         public long TrackId { get; set; }
 

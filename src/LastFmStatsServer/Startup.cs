@@ -33,7 +33,11 @@ namespace LastFmStatsServer
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "LastFmStatsServer", Version = "v1" });
             });
 
-            services.AddDbContext<MainContext>(options => options.UseSqlite("Data Source=main.db"));
+            services.AddDbContext<MainContext>(options => options
+                .UseSqlite("Data Source=main.db")
+                //.EnableSensitiveDataLogging(true)
+                //.LogTo(Console.WriteLine)
+                );
 
         }
 

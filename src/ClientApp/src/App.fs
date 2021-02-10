@@ -15,6 +15,7 @@ let myButton = document.querySelector(".my-button") :?> Browser.Types.HTMLButton
 let userNameInput = document.querySelector("#username") :?> Browser.Types.HTMLInputElement
 let outputHtml = document.querySelector("#output") :?> Browser.Types.HTMLParagraphElement
 
+let apiRoot = "http://localhost:5000/"
 
 let logToHtml msg = outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br>{msg}" 
 
@@ -49,26 +50,28 @@ let fetchAllTracks userName =
 let mapScrobbleData (track: GetRecentTracksJson.Recenttracks.Track) = {
     Artist = track.artist.``#text``
     Album = track.album.``#text``
-    TimePlayedTimeStamp = track.date.uts
+    Timestamp = int64 track.date.uts
+    Track = track.name
     }
 
-let truncate precision (dateTime: DateTimeOffset) =
-    if precision = TimeSpan.Zero then dateTime
-    else dateTime.AddTicks(-(dateTime.Ticks % precision.Ticks))
+//let truncate precision (dateTime: DateTimeOffset) =
+//    if precision = TimeSpan.Zero then dateTime
+//    else dateTime.AddTicks(-(dateTime.Ticks % precision.Ticks))
 
-let truncateToSecond = truncate (TimeSpan.FromSeconds(1.0))
+//let truncateToSecond = truncate (TimeSpan.FromSeconds(1.0))
 
-let dateTimeResolver =
-    let encoder = truncateToSecond >> (fun x -> x.ToString("u", CultureInfo.InvariantCulture) |> box<JsonValue>)
-    let decoder = Decode.datetimeOffset
-    (encoder, decoder)
+//let dateTimeResolver =
+//    let encoder = truncateToSecond >> (fun x -> x.ToString("u", CultureInfo.InvariantCulture) |> box<JsonValue>)
+//    let decoder = Decode.datetimeOffset
+//    (encoder, decoder)
 
 let postScrobbles userName (scrobbles: ScrobbleData[]) =
     promise {
-        let jsonBody = Encode.Auto.toString(0, scrobbles, CaseStrategy.CamelCase, Extra.empty |> (Extra.withCustom <|| dateTimeResolver))
+        //let extraCoders = Extra.empty |> (Extra.withCustom <|| dateTimeResolver)
+        let jsonBody = Encode.Auto.toString(0, scrobbles, CaseStrategy.CamelCase, Extra.empty |> Extra.withInt64)
         let! result =
             saneFetch
-                $"http://localhost:5000/api/scrobbles/{userName}" [
+                $"{apiRoot}api/scrobbles/{userName}" [
                     RequestProperties.Method HttpMethod.POST
                     requestHeaders [ HttpRequestHeaders.ContentType "application/json" ]
                     RequestProperties.Body <| unbox(jsonBody)
@@ -93,6 +96,9 @@ let postScrobbles userName (scrobbles: ScrobbleData[]) =
 //                    ]
 //        myButton.textContent <- "sent"
 //    }
+
+
+// TODO: retry on 500 and 503
 
 myButton.onclick <- fun _ ->
     myButton.disabled <- true

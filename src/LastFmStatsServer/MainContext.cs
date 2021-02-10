@@ -47,9 +47,8 @@ namespace LastFmStatsServer
             {
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-                entity.Property(e => e.TimePlayed)
-                    .IsRequired()
-                    .HasColumnType("DATETIME");
+                entity.Property(e => e.Timestamp)
+                    .IsRequired();
 
                 entity.HasOne(d => d.Track)
                     .WithMany(p => p.Scrobbles)

@@ -5,5 +5,6 @@ open System
 type ScrobbleData = {
     Artist: string
     Album: string
-    TimePlayedTimeStamp: string
+    Timestamp: int64
+    Track: string
     }

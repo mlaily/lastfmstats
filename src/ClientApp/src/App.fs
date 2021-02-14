@@ -9,6 +9,7 @@ open ApiModels
 open System
 open Thoth.Json
 open System.Globalization
+open System.Runtime.ExceptionServices
 
 // Get a reference to our button and cast the Element to an HTMLButtonElement
 let myButton = document.querySelector(".my-button") :?> Browser.Types.HTMLButtonElement
@@ -17,15 +18,30 @@ let outputHtml = document.querySelector("#output") :?> Browser.Types.HTMLParagra
 
 let apiRoot = "http://localhost:5000/"
 
-let logToHtml msg = outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br>{msg}" 
+let logToHtml msg = outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br>{msg}"
+
+let retryPromise maxRetries beforeRetry f =
+    let rec loop retriesRemaining =
+        promise {
+            try
+                return! f()
+            with ex ->
+                if retriesRemaining > 0 then
+                    beforeRetry ex
+                    return! loop (retriesRemaining - 1)
+                else return raise (Exception($"Still failing after {maxRetries} retries.", ex))
+        }
+    loop maxRetries
 
 let fetchAllTracks userName =
-    let batchSize = 100
-    let fetchPage  page =
-        fetchTracks userName batchSize page
-        |> Promise.map (function
-            | Ok ok -> ok
-            | Error error -> failwith $"Error while fetching tracks: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
+    let batchSize = 1000
+    let fetchPage page =
+        let fetchOne () =
+            fetchTracks userName batchSize page
+            |> Promise.map (function
+                | Ok ok -> ok
+                | Error error -> failwith $"Error while fetching tracks: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
+        retryPromise 10 (fun ex -> logToHtml $"An error occured: {ex.Message}\nRetrying...") fetchOne
     let rec fetchAllTracks' page =
         asyncSeq {
             let! data = fetchPage page |> Async.AwaitPromise
@@ -37,7 +53,7 @@ let fetchAllTracks userName =
             
             yield refinedData
 
-            logToHtml $"Page {currentPage} - {refinedData.Length} tracks." 
+            logToHtml $"Page {currentPage} - {refinedData.Length} tracks."
             if currentPage > 1 then yield! fetchAllTracks' (page - 1) // Recurse from oldest page (totalPages) to first page (1)
         }
     promise {

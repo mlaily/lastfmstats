@@ -73,35 +73,13 @@ namespace LastFmStatsServer.Controllers
                     var uniqueTracks = filteredData.Select(x => (queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track)).Distinct();
                     var newTrackCount = _mainContext.InsertOrIgnore(_mainContext.Tracks.EntityType, (nameof(Track.ArtistId), nameof(Track.AlbumId), nameof(Track.Name)), uniqueTracks.Cast<ITuple>());
 
-                    var uniqueTimestamps = filteredData.Select(x => x.Timestamp).Distinct();
-                    var queriedScrobbles = _mainContext.Scrobbles.Where(x => uniqueTimestamps.Contains(x.Timestamp)).ToDictionary(x => x.Timestamp);
+                    //var uniqueTimestamps = filteredData.Select(x => x.Timestamp).Distinct();
+                    //var queriedScrobbles = _mainContext.Scrobbles.Where(x => uniqueTimestamps.Contains(x.Timestamp)).ToDictionary(x => x.Timestamp);
 
                     var actuallySaved = _mainContext.SaveChanges();
 
-                    //_mainContext.InsertScrobblesOrIgnore(user.Id,)
+                    actuallySaved += _mainContext.InsertScrobblesOrIgnore(user.Id, filteredData.Select(x => (queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track, x.Timestamp)));
 
-                    foreach (var datum in filteredData)
-                    {
-                        // Do not re-insert scrobbles made at the same second:
-                        if (!queriedScrobbles.ContainsKey(datum.Timestamp))
-                        {
-                            var track = from dbTrack in _mainContext.Tracks
-                                        where dbTrack.Name == datum.Track
-                                        && dbTrack.Artist.Id == queriedArtists[datum.Artist].Id
-                                        && dbTrack.Album.Id == queriedAlbums[datum.Album].Id
-                                        select dbTrack.Id;
-
-                            var scrobble = new Scrobble
-                            {
-                                Timestamp = datum.Timestamp,
-                                TrackId = track.First(),
-                                User = user,
-                            };
-                            _mainContext.Scrobbles.Add(scrobble);
-                        }
-                    }
-
-                    actuallySaved += _mainContext.SaveChanges();
                     transaction.Commit();
 
                     return new JsonResult(new { SavedCount = actuallySaved });

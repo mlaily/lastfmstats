@@ -1,3 +1,5 @@
+using Dapper;
+using LastFmStatsServer.Dapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -61,6 +63,12 @@ namespace LastFmStatsServer
             {
                 endpoints.MapControllers();
             });
+
+            // Make SQLite support DateTimeOffset
+            SqlMapper.AddTypeHandler(typeof(DateTimeOffset), new UtcDateTimeOffsetTypeHandler());
+
+            // https://github.com/StackExchange/Dapper/pull/720
+            SqlMapper.AssumeColumnsAreStronglyTyped = false;
         }
     }
 }

@@ -132,6 +132,51 @@ GetTupleItems(columnValues).Select((x, i) => KeyValuePair.Create(columnNames[i],
             return inserted;
         }
 
+        public int InsertOrIgnore_Alternative_With_CTE(IEntityType entityType, ITuple targetPropertyNames, IEnumerable<ITuple> values)
+        {
+            if (targetPropertyNames.Length != values.FirstOrDefault().Length) throw new ArgumentException($"{nameof(targetPropertyNames)} and {nameof(values)} must have the same arity!");
+            var columnNames = GetTupleItems(targetPropertyNames).Cast<string>().Select(x => GetColumnName(entityType, x)).ToList();
+            var formattedColumnNames = string.Join(", ", columnNames);
+
+            var sb = new StringBuilder();
+            int currentParamId = 0;
+            DynamicParameters parameters = new DynamicParameters();
+            string parameterPrefix = "@a";
+            bool firstRow = true;
+            foreach (var item in values)
+            {
+                if (firstRow)
+                    firstRow = false;
+                else
+                    sb.Append(",");
+
+                void AddParameter(object value, bool addTrailingComma = false)
+                {
+                    var name = $"{parameterPrefix}{currentParamId}";
+                    parameters.Add(name, value);
+                    sb.Append(name);
+                    if (addTrailingComma) sb.Append(",");
+                    currentParamId++;
+                }
+
+                sb.Append("(");
+                for (int i = 0; i < item.Length; i++)
+                {
+                    AddParameter(item[i], i + 1 != item.Length);
+                }
+                sb.Append(")");
+            }
+
+            return Database.GetDbConnection().Execute($@"
+INSERT OR IGNORE INTO {entityType.GetTableName()}
+({formattedColumnNames})
+SELECT * FROM
+  (WITH Cte({formattedColumnNames}) AS
+    (VALUES {sb})
+  SELECT * FROM Cte) Cte",
+  parameters);
+        }
+
         public int InsertScrobblesOrIgnore(long userId, IEnumerable<(long ArtistId, long AlbumId, string TrackName, long Timestamp)> data)
         {
             var scrobbleUserIdColumn = GetColumnName(Scrobbles.EntityType, nameof(Scrobble.UserId));

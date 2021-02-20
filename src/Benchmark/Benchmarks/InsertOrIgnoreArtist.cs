@@ -11,8 +11,8 @@ using System.Threading.Tasks;
 
 namespace Benchmark
 {
-    [BenchmarkCategory(nameof(InsertArtist))]
-    public class InsertArtist : BenchmarkBase
+    [BenchmarkCategory(nameof(InsertOrIgnoreArtist))]
+    public class InsertOrIgnoreArtist : BenchmarkBase
     {
         public override void SetupIteration()
         {
@@ -20,16 +20,16 @@ namespace Benchmark
             InitializeDb();
         }
 
-        [Benchmark(OperationsPerInvoke = ArtistNotInDbCount, Baseline = true)]
+        [Benchmark(OperationsPerInvoke = AllArtistsCount, Baseline = true)]
         public void Dapper()
         {
             using (var transaction = Context.Database.BeginTransaction())
             {
                 int inserted = 0;
-                foreach (var item in _artistsNotInDb)
+                foreach (var item in _allArtists)
                 {
                     inserted += Context.Database.GetDbConnection().Execute($@"
-INSERT INTO {Context.Artists.EntityType.GetTableName()}
+INSERT OR IGNORE INTO {Context.Artists.EntityType.GetTableName()}
 ({Context.GetColumnName(Context.Artists.EntityType, nameof(Artist.Name))})
 VALUES (@Name)",
 new { Name = item.Name });
@@ -39,12 +39,15 @@ new { Name = item.Name });
             }
         }
 
-        [Benchmark(OperationsPerInvoke = ArtistNotInDbCount)]
+        [Benchmark(OperationsPerInvoke = AllArtistsCount)]
         public void Ef()
         {
             using (var transaction = Context.Database.BeginTransaction())
             {
-                Context.Artists.AddRange(_artistsNotInDb.Select(x => new Artist { Name = x.Name }));
+                var alreadyExisting = Context.Artists.Where(x => _allArtists.Select(x => x.Name).Contains(x.Name)).ToDictionary(x => x.Name);
+                BenchmarkDebug.Assert(alreadyExisting.Count == ArtistAlreadyInDbCount);
+                var toInsert = _allArtists.Where(x => alreadyExisting.ContainsKey(x.Name) == false).Select(x => new Artist { Name = x.Name });
+                Context.Artists.AddRange(toInsert);
                 int inserted = Context.SaveChanges();
                 BenchmarkDebug.Assert(inserted == ArtistNotInDbCount);
                 transaction.Commit();

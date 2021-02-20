@@ -14,8 +14,12 @@ namespace Benchmark
 {
     public abstract class BenchmarkBase
     {
-        public const int ArtistBatchCount = 2500;
-        protected IReadOnlyCollection<(long Id, string Name)> _artistsToInsert;
+        public const int ArtistAlreadyInDbCount = 2500;
+        public const int ArtistNotInDbCount = 2500;
+        public const int AllArtistsCount = 5000;
+        protected IReadOnlyCollection<(long Id, string Name)> _artistsAlreadyInDb;
+        protected IReadOnlyCollection<(long Id, string Name)> _artistsNotInDb;
+        protected IReadOnlyCollection<(long Id, string Name)> _allArtists => _artistsAlreadyInDb.Concat(_artistsNotInDb).ToList();
 
         public MainContext Context { get; private set; }
 
@@ -31,8 +35,8 @@ namespace Benchmark
             // Populate it with some data
             using (var transaction = Context.Database.BeginTransaction())
             {
-                var first2500Artists = TestData.GetArtists().Take(ArtistBatchCount).ToList();
-                Context.Artists.AddRange(first2500Artists.Select(x => new Artist { Name = x.Name }));
+                _artistsAlreadyInDb = TestData.GetArtists().Take(ArtistAlreadyInDbCount).ToList();
+                Context.Artists.AddRange(_artistsAlreadyInDb.Select(x => new Artist { Name = x.Name }));
                 Context.SaveChanges();
                 transaction.Commit();
             }
@@ -43,7 +47,7 @@ namespace Benchmark
             Context.Database.OpenConnection();
 
             // Prepare reusable test data
-            _artistsToInsert = TestData.GetArtists().Skip(ArtistBatchCount).Take(ArtistBatchCount).ToList();
+            _artistsNotInDb = TestData.GetArtists().Skip(ArtistAlreadyInDbCount).Take(ArtistNotInDbCount).ToList();
         }
 
         [IterationSetup]

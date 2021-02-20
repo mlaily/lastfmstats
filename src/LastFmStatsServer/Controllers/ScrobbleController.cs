@@ -61,6 +61,7 @@ namespace LastFmStatsServer.Controllers
                 try
                 {
                     var user = _mainContext.Users.FirstOrDefault(x => x.Name == normalizedUserName) ?? _mainContext.Users.Add(new User { Name = normalizedUserName }).Entity;
+                    //var userQuery = _mainContext.Users.Where(x => x.Name == normalizedUserName);
 
                     var uniqueArtistNames = filteredData.Select(x => x.Artist).Distinct();
                     var newArtistNameCount = _mainContext.InsertOrIgnore(_mainContext.Artists.EntityType, nameof(Artist.Name), uniqueArtistNames);
@@ -73,16 +74,29 @@ namespace LastFmStatsServer.Controllers
                     var uniqueTracks = filteredData.Select(x => (queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track)).Distinct();
                     var newTrackCount = _mainContext.InsertOrIgnore(_mainContext.Tracks.EntityType, (nameof(Track.ArtistId), nameof(Track.AlbumId), nameof(Track.Name)), uniqueTracks.Cast<ITuple>());
 
-                    //var uniqueTimestamps = filteredData.Select(x => x.Timestamp).Distinct();
-                    //var queriedScrobbles = _mainContext.Scrobbles.Where(x => uniqueTimestamps.Contains(x.Timestamp)).ToDictionary(x => x.Timestamp);
+                    var uniqueTrackNames = uniqueTracks.Select(x => x.Track).Distinct();
+                    // Too much data, but see if not filtering helps perf?
+                    // TODO: benchmark
+                    // - loop insert VS cte insert (with/without indexes? with/without existing data? with few columns/with many columns?)
+                    //      notice cte is only one request, so no need for a long transaction
+                    //      also try syntax without a cte https://stackoverflow.com/questions/1609637/is-it-possible-to-insert-multiple-rows-at-a-time-in-an-sqlite-database
+                    // - insert scrobbles by matching tracks from within a cte VS query all the data and filter in application code
+                    var queriedTracks = _mainContext.Tracks.Where(x => uniqueTrackNames.Contains(x.Name)).ToDictionary(x => (x.ArtistId, x.AlbumId, x.Name));
 
                     var actuallySaved = _mainContext.SaveChanges();
 
-                    actuallySaved += _mainContext.InsertScrobblesOrIgnore(user.Id, filteredData.Select(x => (queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track, x.Timestamp)));
+                    var uniqueScrobbles = filteredData.Select(x => (user.Id, queriedTracks[(queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track)].Id, x.Timestamp)).Distinct();
+                    var newScrobbleCount = _mainContext.InsertOrIgnore(_mainContext.Scrobbles.EntityType, (nameof(Scrobble.UserId), nameof(Scrobble.TrackId), nameof(Scrobble.Timestamp)), uniqueScrobbles.Cast<ITuple>());
+
+                    //var uniqueTimestamps = filteredData.Select(x => x.Timestamp).Distinct();
+                    //var queriedScrobbles = _mainContext.Scrobbles.Where(x => uniqueTimestamps.Contains(x.Timestamp)).ToDictionary(x => x.Timestamp);
+
+
+                    //actuallySaved += _mainContext.InsertScrobblesOrIgnore(user.Id, filteredData.Select(x => (queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track, x.Timestamp)));
 
                     transaction.Commit();
 
-                    return new JsonResult(new { SavedCount = actuallySaved });
+                    return new JsonResult(new { SavedCount = newScrobbleCount });
                 }
                 catch (Exception)
                 {

@@ -52,7 +52,7 @@ new { Name = item.Name });
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount, Baseline = true)]
+        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperRawBulk()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -79,6 +79,38 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
                     Context.Artists.EntityType,
                     Context.CreateTuple(nameof(Artist.Name)),
                     Context.SelectTuples(TestData.PrepopulatedAndNewArtists.Select(x => x.Name)));
+
+                BenchmarkDebug.Assert(inserted == TestData.NewArtistsCount);
+                transaction.Commit();
+            }
+        }
+
+        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        public void DapperGenericBulkArray()
+        {
+            using (var transaction = Context.Database.BeginTransaction())
+            {
+                var nameColumn = Context.GetColumnName(Context.Artists.EntityType, nameof(Artist.Name));
+                var inserted = Context.InsertOrIgnore_BulkArray(
+                    Context.Artists.EntityType,
+                    new[] { nameof(Artist.Name) },
+                    TestData.PrepopulatedAndNewArtists.Select(x => new[] { x.Name }));
+
+                BenchmarkDebug.Assert(inserted == TestData.NewArtistsCount);
+                transaction.Commit();
+            }
+        }
+
+        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount, Baseline = true)]
+        public void GenericDbCommand()
+        {
+            using (var transaction = Context.Database.BeginTransaction())
+            {
+                var nameColumn = Context.GetColumnName(Context.Artists.EntityType, nameof(Artist.Name));
+                var inserted = Context.InsertOrIgnore_DbCommand(
+                    Context.Artists.EntityType,
+                    new[] { nameof(Artist.Name) },
+                    TestData.PrepopulatedAndNewArtists.Select(x => new[] { x.Name }));
 
                 BenchmarkDebug.Assert(inserted == TestData.NewArtistsCount);
                 transaction.Commit();
@@ -128,7 +160,7 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
         }
 
 
-        [Benchmark(OperationsPerInvoke = TestData.NewArtistsCount)]
+        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperMultiValues()
         {
             using (var transaction = Context.Database.BeginTransaction())

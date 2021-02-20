@@ -157,6 +157,70 @@ values.Select(tuple => GetTupleItems(tuple).Select((x, i) => KeyValuePair.Create
             return inserted;
         }
 
+        public int InsertOrIgnore_BulkArray(IEntityType entityType, string[] targetPropertyNames, IEnumerable<object[]> values)
+        {
+            if (targetPropertyNames.Length != values.FirstOrDefault().Length) throw new ArgumentException($"{nameof(targetPropertyNames)} and {nameof(values)} must have the same arity!");
+            var columnNames = targetPropertyNames.Select(x => GetColumnName(entityType, x)).ToList();
+            var formattedColumnNames = string.Join(',', columnNames);
+            var formattedParameterizedColumnNames = string.Join(',', columnNames.Select(x => $"@{x}"));
+
+            var parameters = values.Select(array =>
+            {
+                var dynamicParameters = new DynamicParameters();
+                for (int i = 0; i < array.Length; i++)
+                {
+                    dynamicParameters.Add(columnNames[i], array[i]);
+                }
+                return dynamicParameters;
+            });
+
+            int inserted = Database.GetDbConnection().Execute($@"
+INSERT OR IGNORE INTO {entityType.GetTableName()}
+({formattedColumnNames})
+VALUES ({formattedParameterizedColumnNames})",
+parameters);
+            return inserted;
+        }
+
+        public int InsertOrIgnore_DbCommand(IEntityType entityType, string[] targetPropertyNames, IEnumerable<object[]> values)
+        {
+            if (targetPropertyNames.Length != values.FirstOrDefault().Length) throw new ArgumentException($"{nameof(targetPropertyNames)} and {nameof(values)} must have the same arity!");
+            var columnNames = targetPropertyNames.Select(x => GetColumnName(entityType, x)).ToList();
+            var formattedColumnNames = string.Join(',', columnNames);
+            var formattedParameterizedColumnNames = string.Join(',', columnNames.Select(x => $"@{x}"));
+
+            // https://stackoverflow.com/questions/9006604/improve-performance-of-sqlite-bulk-inserts-using-dapper-orm
+            var command = Database.GetDbConnection().CreateCommand();
+            command.CommandText = $@"
+INSERT OR IGNORE INTO {entityType.GetTableName()}
+({formattedColumnNames})
+VALUES ({formattedParameterizedColumnNames})";
+
+            // Create parameters with their names:
+            var parameters = columnNames.Select(x =>
+            {
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = x;
+                command.Parameters.Add(parameter);
+                return parameter;
+            }).ToList();
+
+            int inserted = 0;
+            // Execute the command, reusing the parameters:
+            foreach (var value in values)
+            {
+                // Use columnNames here so that it crashes 
+                // instead of silently using wrong values if the value array is too small
+                for (int i = 0; i < columnNames.Count; i++)
+                {
+                    parameters[i].Value = value[i];
+                }
+
+                inserted += command.ExecuteNonQuery();
+            }
+            return inserted;
+        }
+
         public int InsertOrIgnore_DynamicParameters(IEntityType entityType, ITuple targetPropertyNames, IEnumerable<ITuple> values)
         {
             if (targetPropertyNames.Length != values.FirstOrDefault().Length) throw new ArgumentException($"{nameof(targetPropertyNames)} and {nameof(values)} must have the same arity!");

@@ -221,7 +221,7 @@ parameters);
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.ScrobbleDataCount, Baseline = true)]
+        [Benchmark(OperationsPerInvoke = TestData.ScrobbleDataCount)]
         public void DapperGenericBulk()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -240,6 +240,37 @@ parameters);
 
                 var uniqueScrobbles = TestData.ScrobbleData.Select(x => (1, queriedTracks[(queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track)].Id, x.Timestamp)).Distinct();
                 var inserted = Context.InsertOrIgnore_Bulk(Context.Scrobbles.EntityType, (nameof(Scrobble.UserId), nameof(Scrobble.TrackId), nameof(Scrobble.Timestamp)), uniqueScrobbles.Cast<ITuple>());
+
+                BenchmarkDebug.Assert(inserted == TestData.ScrobbleDataCount);
+                transaction.Commit();
+            }
+        }
+
+        [Benchmark(OperationsPerInvoke = TestData.ScrobbleDataCount, Baseline = true)]
+        public void GenericDbCommand()
+        {
+            using (var transaction = Context.Database.BeginTransaction())
+            {
+                InsertUserArtistsAndAlbums();
+
+                var uniqueTracks = TestData.ScrobbleData.Select(x => (ArtistId: queriedArtists[x.Artist].Id, AlbumId: queriedAlbums[x.Album].Id, x.Track)).Distinct();
+                var uniqueTrackNames = uniqueTracks.Select(x => x.Track).Distinct();
+                var newTrackCount = Context.InsertOrIgnore_DbCommand(
+                    Context.Tracks.EntityType,
+                    new[] { nameof(Track.ArtistId), nameof(Track.AlbumId), nameof(Track.Name) },
+                    uniqueTracks.Select(x => new object[] { x.ArtistId, x.AlbumId, x.Track }));
+
+                //
+
+                // Since we can't WHERE IN on a tuple list, we query duplicates here (A track is not only a name, but also an artist and album).
+                // The benchmark is here to find if this is actually better to query too much and filter in app, or do everything in the db...
+                var queriedTracks = Context.Tracks.Where(x => uniqueTrackNames.Contains(x.Name)).ToDictionary(x => (x.ArtistId, x.AlbumId, x.Name));
+
+                var uniqueScrobbles = TestData.ScrobbleData.Select(x => (UserId: 1, TrackId: queriedTracks[(queriedArtists[x.Artist].Id, AlbumId: queriedAlbums[x.Album].Id, x.Track)].Id, x.Timestamp)).Distinct();
+                var inserted = Context.InsertOrIgnore_DbCommand(
+                    Context.Scrobbles.EntityType,
+                    new[] { nameof(Scrobble.UserId), nameof(Scrobble.TrackId), nameof(Scrobble.Timestamp) },
+                    uniqueScrobbles.Select(x => new object[] { x.UserId, x.TrackId, x.Timestamp }));
 
                 BenchmarkDebug.Assert(inserted == TestData.ScrobbleDataCount);
                 transaction.Commit();

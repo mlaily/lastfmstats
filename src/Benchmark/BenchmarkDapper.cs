@@ -1,4 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -19,21 +20,22 @@ namespace Benchmark
             InitializeDb();
         }
 
-        [Benchmark(Description = "INSERT Artist")]
+        [BenchmarkCategory("INSERT Artist")]
+        [Benchmark(OperationsPerInvoke = ArtistBatchCount, Baseline = true)]
         public void Execute()
         {
-            System.Threading.Thread.Sleep(1);
-            return;
             using (var transaction = Context.Database.BeginTransaction())
             {
+                int inserted = 0;
                 foreach (var item in _artistsToInsert)
                 {
-                    Context.Database.GetDbConnection().Execute($@"
+                    inserted += Context.Database.GetDbConnection().Execute($@"
 INSERT INTO {Context.Artists.EntityType.GetTableName()}
 ({Context.GetColumnName(Context.Artists.EntityType, nameof(Artist.Name))})
 VALUES (@Name)",
 new { Name = item.Name });
                 }
+                BenchmarkDebug.Assert(inserted == ArtistBatchCount);
                 transaction.Commit();
             }
         }
@@ -42,13 +44,14 @@ new { Name = item.Name });
     [Description("Dapper")]
     public class BenchmarkDapper_Select : BenchmarkBase
     {
-        [Benchmark(Description = "SELECT Artist")]
+        [BenchmarkCategory("SELECT Artist")]
+        [Benchmark(OperationsPerInvoke = ArtistBatchCount, Baseline = true)]
         public object Execute()
         {
             var result = Context.Database.GetDbConnection()
                 .Query<(long Id, string Name)>($@"SELECT * FROM {Context.Artists.EntityType.GetTableName()}")
                 .ToList();
-            BenchmarkDebug.Assert(result.Count == 2500);
+            BenchmarkDebug.Assert(result.Count == ArtistBatchCount);
             return result;
         }
     }

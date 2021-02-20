@@ -30,9 +30,9 @@ namespace Benchmark
 
             var md = MemoryDiagnoser.Default;
             AddDiagnoser(md);
-            AddColumn(new ORMColum());
+            AddColumn(new ORMColumn());
+            AddColumn(new OperationsPerInvokeColumn());
             AddColumn(TargetMethodColumn.Method);
-            //AddColumn(new ReturnColum());
             AddColumn(StatisticColumn.Mean);
             AddColumn(StatisticColumn.StdDev);
             AddColumn(StatisticColumn.Error);
@@ -45,13 +45,33 @@ namespace Benchmark
                    .WithIterationCount(50)
             );
             Orderer = new DefaultOrderer(SummaryOrderPolicy.FastestToSlowest);
-            Options |= ConfigOptions.JoinSummary;
+            Options |= ConfigOptions.JoinSummary | ConfigOptions.StopOnFirstError;
         }
     }
 
-    public class ORMColum : IColumn
+    public class OperationsPerInvokeColumn : IColumn
     {
-        public string Id => nameof(ORMColum);
+        public string Id => nameof(OperationsPerInvokeColumn);
+        public string ColumnName => "Operations";
+        public bool AlwaysShow => true;
+        public ColumnCategory Category => ColumnCategory.Metric;
+        public int PriorityInCategory => -10;
+        public bool IsNumeric => true;
+        public UnitType UnitType => UnitType.Size;
+        public string Legend => "Operations Per Invoke";
+
+        public string GetValue(Summary summary, BenchmarkCase benchmarkCase) => benchmarkCase.Descriptor.OperationsPerInvoke.ToString();
+
+        public string GetValue(Summary summary, BenchmarkCase benchmarkCase, SummaryStyle style) => benchmarkCase.Descriptor.OperationsPerInvoke.ToString();
+
+        public bool IsAvailable(Summary summary) => true;
+
+        public bool IsDefault(Summary summary, BenchmarkCase benchmarkCase) => benchmarkCase.Descriptor.OperationsPerInvoke == 1;
+    }
+
+    public class ORMColumn : IColumn
+    {
+        public string Id => nameof(ORMColumn);
         public string ColumnName { get; } = "ORM";
         public string Legend => "The object/relational mapper being tested";
 

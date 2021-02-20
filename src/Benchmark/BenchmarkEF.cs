@@ -18,15 +18,15 @@ namespace Benchmark
             InitializeDb();
         }
 
-        [Benchmark(Description = "INSERT Artist")]
+        [BenchmarkCategory("INSERT Artist")]
+        [Benchmark(OperationsPerInvoke = ArtistBatchCount)]
         public void Execute()
         {
-            System.Threading.Thread.Sleep(1);
-            return;
             using (var transaction = Context.Database.BeginTransaction())
             {
                 Context.Artists.AddRange(_artistsToInsert.Select(x => new Artist { Name = x.Name }));
-                Context.SaveChanges();
+                int inserted = Context.SaveChanges();
+                BenchmarkDebug.Assert(inserted == ArtistBatchCount);
                 transaction.Commit();
             }
         }
@@ -35,11 +35,12 @@ namespace Benchmark
     [Description("EF")]
     public class BenchmarkEF_Select : BenchmarkBase
     {
-        [Benchmark(Description = "SELECT Artist")]
+        [BenchmarkCategory("SELECT Artist")]
+        [Benchmark(OperationsPerInvoke = ArtistBatchCount)]
         public object Execute()
         {
             var result = Context.Artists.ToList();
-            BenchmarkDebug.Assert(result.Count == 2500);
+            BenchmarkDebug.Assert(result.Count == ArtistBatchCount);
             return result;
         }
     }

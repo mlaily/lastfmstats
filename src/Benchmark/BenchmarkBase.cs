@@ -1,4 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,8 +13,11 @@ using System.Threading.Tasks;
 namespace Benchmark
 {
     [BenchmarkCategory("Data access")]
+    [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
+    [CategoriesColumn]
     public abstract class BenchmarkBase
     {
+        public const int ArtistBatchCount = 2500;
         protected IReadOnlyCollection<(long Id, string Name)> _artistsToInsert;
 
         public MainContext Context { get; private set; }
@@ -30,7 +34,7 @@ namespace Benchmark
             // Populate it with some data
             using (var transaction = Context.Database.BeginTransaction())
             {
-                var first2500Artists = TestData.GetArtists().Take(2500).ToList();
+                var first2500Artists = TestData.GetArtists().Take(ArtistBatchCount).ToList();
                 Context.Artists.AddRange(first2500Artists.Select(x => new Artist { Name = x.Name }));
                 Context.SaveChanges();
                 transaction.Commit();
@@ -42,7 +46,7 @@ namespace Benchmark
             Context.Database.OpenConnection();
 
             // Prepare reusable test data
-            _artistsToInsert = TestData.GetArtists().Skip(2500).Take(2500).ToList();
+            _artistsToInsert = TestData.GetArtists().Skip(ArtistBatchCount).Take(ArtistBatchCount).ToList();
         }
 
         [IterationSetup]

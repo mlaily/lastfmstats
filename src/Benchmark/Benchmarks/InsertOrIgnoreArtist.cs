@@ -118,6 +118,22 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
         }
 
         [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        public void Actual()
+        {
+            using (var transaction = Context.Database.BeginTransaction())
+            {
+                var nameColumn = Context.GetColumnName(Context.Artists.EntityType, nameof(Artist.Name));
+                var inserted = Context.InsertOrIgnore(
+                    Context.Artists.EntityType,
+                    nameof(Artist.Name),
+                    TestData.PrepopulatedAndNewArtists.Select(x => x.Name));
+
+                BenchmarkDebug.Assert(inserted == TestData.NewArtistsCount);
+                transaction.Commit();
+            }
+        }
+
+        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperGenericLoop()
         {
             using (var transaction = Context.Database.BeginTransaction())

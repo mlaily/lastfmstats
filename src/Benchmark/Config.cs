@@ -33,6 +33,7 @@ namespace Benchmark
             //AddColumn(CategoriesColumn.Default);
             AddColumn(TargetMethodColumn.Type);
             AddColumn(TargetMethodColumn.Method);
+            AddColumn(StatisticColumn.OperationsPerSecond);
             AddColumn(StatisticColumn.Mean);
             AddColumn(StatisticColumn.StdDev);
             AddColumn(StatisticColumn.Error);

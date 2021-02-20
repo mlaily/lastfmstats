@@ -36,7 +36,7 @@ namespace LastFmStatsServer.Controllers
 
             if (data.Length > 1000)
             {
-                var result = new JsonResult(new { Error = "Too much data. Stay below 1000." });
+                var result = new JsonResult(new { Error = "Too much data. Stay at or below 1000." });
                 result.StatusCode = (int)HttpStatusCode.BadRequest;
                 return result;
             }
@@ -60,8 +60,8 @@ namespace LastFmStatsServer.Controllers
             {
                 try
                 {
-                    var user = _mainContext.Users.FirstOrDefault(x => x.Name == normalizedUserName) ?? _mainContext.Users.Add(new User { Name = normalizedUserName }).Entity;
-                    //var userQuery = _mainContext.Users.Where(x => x.Name == normalizedUserName);
+                    var newUserCount = _mainContext.InsertOrIgnore(_mainContext.Users.EntityType, nameof(LastFmStatsServer.User.Name), new[] { normalizedUserName });
+                    var user = _mainContext.Users.FirstOrDefault(x => x.Name == normalizedUserName);
 
                     var uniqueArtistNames = filteredData.Select(x => x.Artist).Distinct();
                     var newArtistNameCount = _mainContext.InsertOrIgnore(_mainContext.Artists.EntityType, nameof(Artist.Name), uniqueArtistNames);
@@ -72,31 +72,27 @@ namespace LastFmStatsServer.Controllers
                     var queriedAlbums = _mainContext.Albums.Where(x => uniqueAlbumNames.Contains(x.Name)).ToDictionary(x => x.Name);
 
                     var uniqueTracks = filteredData.Select(x => (queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track)).Distinct();
-                    var newTrackCount = _mainContext.InsertOrIgnore(_mainContext.Tracks.EntityType, (nameof(Track.ArtistId), nameof(Track.AlbumId), nameof(Track.Name)), uniqueTracks.Cast<ITuple>());
+                    var newTrackCount = _mainContext.InsertOrIgnore(_mainContext.Tracks.EntityType, (nameof(Track.ArtistId), nameof(Track.AlbumId), nameof(Track.Name)), uniqueTracks);
 
                     var uniqueTrackNames = uniqueTracks.Select(x => x.Track).Distinct();
-                    // Too much data, but see if not filtering helps perf?
-                    // TODO: benchmark
-                    // - loop insert VS cte insert (with/without indexes? with/without existing data? with few columns/with many columns?)
-                    //      notice cte is only one request, so no need for a long transaction
-                    //      also try syntax without a cte https://stackoverflow.com/questions/1609637/is-it-possible-to-insert-multiple-rows-at-a-time-in-an-sqlite-database
-                    // - insert scrobbles by matching tracks from within a cte VS query all the data and filter in application code
                     var queriedTracks = _mainContext.Tracks.Where(x => uniqueTrackNames.Contains(x.Name)).ToDictionary(x => (x.ArtistId, x.AlbumId, x.Name));
 
-                    var actuallySaved = _mainContext.SaveChanges();
-
                     var uniqueScrobbles = filteredData.Select(x => (user.Id, queriedTracks[(queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track)].Id, x.Timestamp)).Distinct();
-                    var newScrobbleCount = _mainContext.InsertOrIgnore(_mainContext.Scrobbles.EntityType, (nameof(Scrobble.UserId), nameof(Scrobble.TrackId), nameof(Scrobble.Timestamp)), uniqueScrobbles.Cast<ITuple>());
+                    var newScrobbleCount = _mainContext.InsertOrIgnore(_mainContext.Scrobbles.EntityType, (nameof(Scrobble.UserId), nameof(Scrobble.TrackId), nameof(Scrobble.Timestamp)), uniqueScrobbles);
 
                     //var uniqueTimestamps = filteredData.Select(x => x.Timestamp).Distinct();
                     //var queriedScrobbles = _mainContext.Scrobbles.Where(x => uniqueTimestamps.Contains(x.Timestamp)).ToDictionary(x => x.Timestamp);
 
-
-                    //actuallySaved += _mainContext.InsertScrobblesOrIgnore(user.Id, filteredData.Select(x => (queriedArtists[x.Artist].Id, queriedAlbums[x.Album].Id, x.Track, x.Timestamp)));
-
                     transaction.Commit();
 
-                    return new JsonResult(new { SavedCount = newScrobbleCount });
+                    return new JsonResult(new
+                    {
+                        newUserCount,
+                        newArtistNameCount,
+                        newAlbumNameCount,
+                        newTrackCount,
+                        newScrobbleCount,
+                    });
                 }
                 catch (Exception)
                 {

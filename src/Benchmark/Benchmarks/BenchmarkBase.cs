@@ -12,9 +12,6 @@ using System.Threading.Tasks;
 
 namespace Benchmark
 {
-    [BenchmarkCategory("Data access")]
-    [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
-    [CategoriesColumn]
     public abstract class BenchmarkBase
     {
         public const int ArtistBatchCount = 2500;

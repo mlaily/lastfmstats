@@ -11,8 +11,8 @@ using System.Threading.Tasks;
 
 namespace Benchmark
 {
-    [Description("Dapper")]
-    public class BenchmarkDapper_Insert : BenchmarkBase
+    [BenchmarkCategory(nameof(InsertArtist))]
+    public class InsertArtist : BenchmarkBase
     {
         public override void SetupIteration()
         {
@@ -20,9 +20,8 @@ namespace Benchmark
             InitializeDb();
         }
 
-        [BenchmarkCategory("INSERT Artist")]
         [Benchmark(OperationsPerInvoke = ArtistBatchCount, Baseline = true)]
-        public void Execute()
+        public void Dapper()
         {
             using (var transaction = Context.Database.BeginTransaction())
             {
@@ -39,20 +38,17 @@ new { Name = item.Name });
                 transaction.Commit();
             }
         }
-    }
 
-    [Description("Dapper")]
-    public class BenchmarkDapper_Select : BenchmarkBase
-    {
-        [BenchmarkCategory("SELECT Artist")]
-        [Benchmark(OperationsPerInvoke = ArtistBatchCount, Baseline = true)]
-        public object Execute()
+        [Benchmark(OperationsPerInvoke = ArtistBatchCount)]
+        public void Ef()
         {
-            var result = Context.Database.GetDbConnection()
-                .Query<(long Id, string Name)>($@"SELECT * FROM {Context.Artists.EntityType.GetTableName()}")
-                .ToList();
-            BenchmarkDebug.Assert(result.Count == ArtistBatchCount);
-            return result;
+            using (var transaction = Context.Database.BeginTransaction())
+            {
+                Context.Artists.AddRange(_artistsToInsert.Select(x => new Artist { Name = x.Name }));
+                int inserted = Context.SaveChanges();
+                BenchmarkDebug.Assert(inserted == ArtistBatchCount);
+                transaction.Commit();
+            }
         }
     }
 }

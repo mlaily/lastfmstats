@@ -14,18 +14,13 @@ namespace Benchmark
 {
     public abstract class BenchmarkBase
     {
-        public const int ArtistAlreadyInDbCount = 2500;
-        public const int ArtistNotInDbCount = 2500;
-        public const int AllArtistsCount = 5000;
-        protected IReadOnlyCollection<(long Id, string Name)> _artistsAlreadyInDb;
-        protected IReadOnlyCollection<(long Id, string Name)> _artistsNotInDb;
-        protected IReadOnlyCollection<(long Id, string Name)> _allArtists => _artistsAlreadyInDb.Concat(_artistsNotInDb).ToList();
-
         public MainContext Context { get; private set; }
 
         [GlobalSetup]
         public virtual void InitializeDb()
         {
+            TestData.Initialize();
+
             // Restart with an empty db
             Context?.Dispose();
             Context = new MainContext();
@@ -33,21 +28,16 @@ namespace Benchmark
             Context.Database.EnsureCreated();
 
             // Populate it with some data
-            using (var transaction = Context.Database.BeginTransaction())
-            {
-                _artistsAlreadyInDb = TestData.GetArtists().Take(ArtistAlreadyInDbCount).ToList();
-                Context.Artists.AddRange(_artistsAlreadyInDb.Select(x => new Artist { Name = x.Name }));
-                Context.SaveChanges();
-                transaction.Commit();
-            }
+            PopulateDb();
 
             // Reset context
             Context.ChangeTracker.Clear();
             Context.Database.CloseConnection();
             Context.Database.OpenConnection();
+        }
 
-            // Prepare reusable test data
-            _artistsNotInDb = TestData.GetArtists().Skip(ArtistAlreadyInDbCount).Take(ArtistNotInDbCount).ToList();
+        protected virtual void PopulateDb()
+        {
         }
 
         [IterationSetup]

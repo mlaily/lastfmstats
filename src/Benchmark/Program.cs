@@ -12,8 +12,6 @@ namespace Benchmark
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-
             // https://github.com/StackExchange/Dapper/pull/720
             SqlMapper.AssumeColumnsAreStronglyTyped = false;
 
@@ -45,8 +43,7 @@ namespace Benchmark
     {
         public static void Debug()
         {
-            var test = TestData.GetArtists();
-            var scrobbleData = TestData.GetScrobbleData();
+
         }
     }
 }

@@ -12,41 +12,70 @@ using System.Threading.Tasks;
 namespace Benchmark
 {
     [BenchmarkCategory(nameof(InsertArtist))]
+    [IterationCount(20)]
     public class InsertArtist : BenchmarkBase
     {
+        protected override void PopulateDb()
+        {
+            base.PopulateDb();
+            using (var transaction = Context.Database.BeginTransaction())
+            {
+                Context.Artists.AddRange(TestData.PrepopulatedArtistNames.Select(x => new Artist { Name = x }));
+                Context.SaveChanges();
+                transaction.Commit();
+            }
+        }
+
         public override void SetupIteration()
         {
             base.SetupIteration();
             InitializeDb();
         }
 
-        [Benchmark(OperationsPerInvoke = ArtistNotInDbCount, Baseline = true)]
-        public void Dapper()
+        [Benchmark(OperationsPerInvoke = TestData.NewArtistsCount)]
+        public void DapperLoop()
         {
             using (var transaction = Context.Database.BeginTransaction())
             {
+                var nameColumn = Context.GetColumnName(Context.Artists.EntityType, nameof(Artist.Name));
                 int inserted = 0;
-                foreach (var item in _artistsNotInDb)
+                foreach (var item in TestData.NewArtistNames)
                 {
                     inserted += Context.Database.GetDbConnection().Execute($@"
 INSERT INTO {Context.Artists.EntityType.GetTableName()}
-({Context.GetColumnName(Context.Artists.EntityType, nameof(Artist.Name))})
+({nameColumn})
 VALUES (@Name)",
-new { Name = item.Name });
+new { Name = item });
                 }
-                BenchmarkDebug.Assert(inserted == ArtistNotInDbCount);
+                BenchmarkDebug.Assert(inserted == TestData.NewArtistsCount);
                 transaction.Commit();
             }
         }
 
-        [Benchmark(OperationsPerInvoke = ArtistNotInDbCount)]
+        [Benchmark(OperationsPerInvoke = TestData.NewArtistsCount, Baseline = true)]
+        public void DapperRawBulk()
+        {
+            using (var transaction = Context.Database.BeginTransaction())
+            {
+                var nameColumn = Context.GetColumnName(Context.Artists.EntityType, nameof(Artist.Name));
+                int inserted = Context.Database.GetDbConnection().Execute($@"
+INSERT INTO {Context.Artists.EntityType.GetTableName()}
+({nameColumn})
+VALUES (@Name)",
+TestData.NewArtistNames.Select(x => new { Name = x }));
+                BenchmarkDebug.Assert(inserted == TestData.NewArtistsCount);
+                transaction.Commit();
+            }
+        }
+
+        [Benchmark(OperationsPerInvoke = TestData.NewArtistsCount)]
         public void Ef()
         {
             using (var transaction = Context.Database.BeginTransaction())
             {
-                Context.Artists.AddRange(_artistsNotInDb.Select(x => new Artist { Name = x.Name }));
+                Context.Artists.AddRange(TestData.NewArtistNames.Select(x => new Artist { Name = x }));
                 int inserted = Context.SaveChanges();
-                BenchmarkDebug.Assert(inserted == ArtistNotInDbCount);
+                BenchmarkDebug.Assert(inserted == TestData.NewArtistsCount);
                 transaction.Commit();
             }
         }

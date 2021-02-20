@@ -47,7 +47,7 @@ namespace Benchmark
                    .WithWarmupCount(5)
                    .WithIterationCount(20)
             );
-            Orderer = new DefaultOrderer(summaryOrderPolicy: SummaryOrderPolicy.Declared);
+            Orderer = new DefaultOrderer(summaryOrderPolicy: SummaryOrderPolicy.FastestToSlowest);
             Options |= ConfigOptions.JoinSummary | ConfigOptions.StopOnFirstError;
         }
     }
@@ -55,7 +55,7 @@ namespace Benchmark
     public class OperationsPerInvokeColumn : IColumn
     {
         public string Id => nameof(OperationsPerInvokeColumn);
-        public string ColumnName => "Operations";
+        public string ColumnName => "Op/Invoke";
         public bool AlwaysShow => true;
         public ColumnCategory Category => ColumnCategory.Metric;
         public int PriorityInCategory => -10;

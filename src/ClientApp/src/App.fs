@@ -8,10 +8,7 @@ open Fetch
 open ApiModels
 open System
 open Thoth.Json
-open System.Globalization
-open System.Runtime.ExceptionServices
 
-// Get a reference to our button and cast the Element to an HTMLButtonElement
 let myButton = document.querySelector(".my-button") :?> Browser.Types.HTMLButtonElement
 let userNameInput = document.querySelector("#username") :?> Browser.Types.HTMLInputElement
 let outputHtml = document.querySelector("#output") :?> Browser.Types.HTMLParagraphElement
@@ -33,11 +30,11 @@ let retryPromise maxRetries beforeRetry f =
         }
     loop maxRetries
 
-let fetchAllTracks userName =
+let fetchAllTracks userName from =
     let batchSize = 1000
     let fetchPage page =
         let fetchOne () =
-            fetchTracks userName batchSize page
+            fetchTracks userName batchSize page from
             |> Promise.map (function
                 | Ok ok -> ok
                 | Error error -> failwith $"Error while fetching tracks: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
@@ -70,17 +67,6 @@ let mapScrobbleData (track: GetRecentTracksJson.Recenttracks.Track) = {
     Track = track.name
     }
 
-//let truncate precision (dateTime: DateTimeOffset) =
-//    if precision = TimeSpan.Zero then dateTime
-//    else dateTime.AddTicks(-(dateTime.Ticks % precision.Ticks))
-
-//let truncateToSecond = truncate (TimeSpan.FromSeconds(1.0))
-
-//let dateTimeResolver =
-//    let encoder = truncateToSecond >> (fun x -> x.ToString("u", CultureInfo.InvariantCulture) |> box<JsonValue>)
-//    let decoder = Decode.datetimeOffset
-//    (encoder, decoder)
-
 let postScrobbles userName (scrobbles: ScrobbleData[]) =
     promise {
         //let extraCoders = Extra.empty |> (Extra.withCustom <|| dateTimeResolver)
@@ -98,34 +84,34 @@ let postScrobbles userName (scrobbles: ScrobbleData[]) =
         ()
     }
 
-//myButton.onclick <- fun _ ->
-//    promise {
-//        let scrobbleData1 = { User = "prout"; Album = ""; Artist = ""; TimePlayed = DateTimeOffset.UtcNow }
-//        let body = [ scrobbleData1 ]
-//        let jsonBody = Encode.Auto.toString(4, body, CaseStrategy.CamelCase, Extra.empty |> (Extra.withCustom <|| dateTimeResolver))
-//        let! result =
-//            saneFetch
-//                "http://localhost:5000/api/scrobble" [
-//                    RequestProperties.Method HttpMethod.POST
-//                    requestHeaders [ HttpRequestHeaders.ContentType "application/json" ]
-//                    RequestProperties.Body <| unbox(jsonBody)
-//                    ]
-//        myButton.textContent <- "sent"
-//    }
+type ResumeFromInfoJson = Fable.JsonProvider.Generator<"""{ "from": 1420206818 }""">
 
-
-// TODO: retry on 500 and 503
+let getResumeTimestamp userName =
+    promise {
+        let! result =
+            saneFetch
+                $"{apiRoot}api/scrobbles/{userName}/resume-from" [
+                    requestHeaders [ HttpRequestHeaders.ContentType "application/json" ]
+                    ]
+        logToHtml result.Status
+        let! responseText = result.text()
+        logToHtml responseText
+        let parsed = ResumeFromInfoJson(responseText)
+        return parsed.from |> int64
+    }
 
 myButton.onclick <- fun _ ->
     myButton.disabled <- true
     let userName = userNameInput.value
-    fetchAllTracks userName
-    |> Promise.map (fun tracksAsyncSeq ->
-        tracksAsyncSeq
-        // |> AsyncSeq.iter fun x-> logToHtml $"{track.name} - {track.artist.``#text``}")
-        |> AsyncSeq.iterAsync (fun tracks ->
-            tracks
-            |> Array.map (fun track -> mapScrobbleData track)
-            |> postScrobbles userName
-            |> Async.AwaitPromise)
-        |> Async.StartAsPromise)
+    promise {
+        let! from = getResumeTimestamp userName
+        let! data = fetchAllTracks userName from
+        do!
+            data
+            |> AsyncSeq.iterAsync (fun tracks ->
+                tracks
+                |> Array.map (fun track -> mapScrobbleData track)
+                |> postScrobbles userName
+                |> Async.AwaitPromise)
+            |> Async.StartAsPromise
+    } |> Promise.start

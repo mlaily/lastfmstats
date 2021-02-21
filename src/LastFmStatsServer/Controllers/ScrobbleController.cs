@@ -26,6 +26,26 @@ namespace LastFmStatsServer.Controllers
             _logger = logger;
         }
 
+
+        private static string NormalizeEmpty(string value) => string.IsNullOrWhiteSpace(value) ? "" : value.Trim();
+        private static string GetNormalizedUserName(string userName) => NormalizeEmpty(userName?.ToLowerInvariant());
+
+        [HttpGet("{userName}/resume-from")]
+        public IActionResult GetResumeTimestamp(string userName)
+        {
+            var lastKnownTimestamp = (from scrobble in _mainContext.Scrobbles
+                                      where scrobble.User.Name == GetNormalizedUserName(userName)
+                                      orderby scrobble.Timestamp
+                                      select scrobble.Timestamp).LastOrDefault();
+
+            // Last.fm allows uploading scrobbles up to two weeks back in time, I think...
+            var backInTimeSeconds = TimeSpan.FromDays(30).TotalSeconds;
+            var fromValue = lastKnownTimestamp - backInTimeSeconds;
+            if (fromValue < 0) fromValue = 0;
+
+            return new JsonResult(new { from = fromValue });
+        }
+
         [HttpPost("{userName}")]
         public IActionResult Post(string userName, ScrobbleData[] data)
         {
@@ -41,8 +61,6 @@ namespace LastFmStatsServer.Controllers
                 return result;
             }
 
-            string NormalizeEmpty(string value)
-                => string.IsNullOrWhiteSpace(value) ? "" : value.Trim();
 
             // Filter out bad data from last.fm
             var lowerTimestampLimit = new DateTimeOffset(2000, 01, 01, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
@@ -54,14 +72,12 @@ namespace LastFmStatsServer.Controllers
                                 select refined)
                                .ToList();
 
-            var normalizedUserName = userName.ToLowerInvariant();
-
             using (var transaction = _mainContext.Database.BeginTransaction())
             {
                 try
                 {
-                    var newUserCount = _mainContext.InsertOrIgnore(_mainContext.Users.EntityType, nameof(LastFmStatsServer.User.Name), new[] { normalizedUserName });
-                    var user = _mainContext.Users.FirstOrDefault(x => x.Name == normalizedUserName);
+                    var newUserCount = _mainContext.InsertOrIgnore(_mainContext.Users.EntityType, nameof(LastFmStatsServer.User.Name), new[] { GetNormalizedUserName(userName) });
+                    var user = _mainContext.Users.FirstOrDefault(x => x.Name == GetNormalizedUserName(userName));
 
                     var uniqueArtistNames = filteredData.Select(x => x.Artist).Distinct();
                     var newArtistNameCount = _mainContext.InsertOrIgnore(_mainContext.Artists.EntityType, nameof(Artist.Name), uniqueArtistNames);

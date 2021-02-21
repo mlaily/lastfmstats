@@ -239,9 +239,9 @@ let private fetchJson url props parser =
         with | ex -> return raise ex
     }
 
-let fetchTracks (username: string) (limit: int) (page: int) =
+let fetchTracks (username: string) (limit: int) (page: int) (from: int64) =
     promise {
-        let url = $"https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user={username}&api_key=b7cced3953cbc4d6c7404dfcdaaae5fc&from=1&format=json&limit={limit}&page={page}"
+        let url = $"https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user={username}&api_key=b7cced3953cbc4d6c7404dfcdaaae5fc&from=1&format=json&limit={limit}&page={page}&from={from}"
         let! result = fetchJson url [] GetRecentTracksJson
         return result
     }

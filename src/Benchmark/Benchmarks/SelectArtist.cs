@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Benchmark
 {
-    [BenchmarkCategory(nameof(SelectArtist))]
+    [BenchmarkCategory("SELECT FROM Artists")]
     [IterationCount(100)]
     public class SelectArtist : BenchmarkBase
     {
@@ -25,7 +25,7 @@ namespace Benchmark
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedArtistsCount, Baseline = true)]
+        [Benchmark(Description = "Dapper query", OperationsPerInvoke = TestData.PrepopulatedArtistsCount, Baseline = true)]
         public object Dapper()
         {
             var tableName = Context.Artists.EntityType.GetTableName();
@@ -36,18 +36,18 @@ namespace Benchmark
             return result;
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedArtistsCount)]
-        public object Ef()
+        [Benchmark(Description = "EF Core query", OperationsPerInvoke = TestData.PrepopulatedArtistsCount)]
+        public object EF()
         {
             var result = Context.Artists.ToList();
             BenchmarkDebug.Assert(result.Count == TestData.PrepopulatedArtistsCount);
             return result;
         }
 
-        private static Func<MainContext, IEnumerable<Artist>> _getAllArtistsCompiled = EF.CompileQuery((MainContext context) => context.Artists);
+        private static Func<MainContext, IEnumerable<Artist>> _getAllArtistsCompiled = Microsoft.EntityFrameworkCore.EF.CompileQuery((MainContext context) => context.Artists);
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedArtistsCount)]
-        public object EfCompiled()
+        [Benchmark(Description = "EF Core query (compiled)", OperationsPerInvoke = TestData.PrepopulatedArtistsCount)]
+        public object EFCompiled()
         {
             var result = _getAllArtistsCompiled(Context).ToList();
             BenchmarkDebug.Assert(result.Count == TestData.PrepopulatedArtistsCount);

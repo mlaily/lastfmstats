@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Benchmark
 {
-    [BenchmarkCategory(nameof(InsertOrIgnoreScrobbleData))]
+    [BenchmarkCategory("INSERT OR IGNORE INTO Scrobbles")]
     [IterationCount(10)]
     public class InsertOrIgnoreScrobbleData : BenchmarkBase
     {
@@ -41,7 +41,7 @@ namespace Benchmark
             queriedAlbums = Context.Albums.Where(x => uniqueAlbumNames.Contains(x.Name)).ToDictionary(x => x.Name);
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.ScrobbleDataCount)]
+        [Benchmark(Description = "CTE", OperationsPerInvoke = TestData.ScrobbleDataCount)]
         public void DapperCTE()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -125,7 +125,7 @@ ON Cte.{trackArtistIdColumn} = t.{trackArtistIdColumn} AND Cte.{trackAlbumIdColu
 parameters);
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.ScrobbleDataCount)]
+        [Benchmark(Description = "Multi-values", OperationsPerInvoke = TestData.ScrobbleDataCount)]
         public void DapperMultiValues()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -197,7 +197,7 @@ VALUES {sb}",
 parameters);
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.ScrobbleDataCount)]
+        [Benchmark(Description = "Generic loop", OperationsPerInvoke = TestData.ScrobbleDataCount)]
         public void DapperGenericLoop()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -222,7 +222,7 @@ parameters);
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.ScrobbleDataCount)]
+        [Benchmark(Description = "Generic bulk (tuples)", OperationsPerInvoke = TestData.ScrobbleDataCount)]
         public void DapperGenericBulk()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -247,7 +247,7 @@ parameters);
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.ScrobbleDataCount, Baseline = true)]
+        [Benchmark(Description = "Generic DbCommand (arrays)", OperationsPerInvoke = TestData.ScrobbleDataCount, Baseline = true)]
         public void GenericDbCommand()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -278,7 +278,7 @@ parameters);
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.ScrobbleDataCount)]
+        [Benchmark(Description = "Generic DbCommand (tuples)", OperationsPerInvoke = TestData.ScrobbleDataCount)]
         public void Actual()
         {
             using (var transaction = Context.Database.BeginTransaction())

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Benchmark
 {
-    [BenchmarkCategory(nameof(InsertOrIgnoreArtist))]
+    [BenchmarkCategory("INSERT OR IGNORE INTO Artists")]
     [IterationCount(20)]
     public class InsertOrIgnoreArtist : BenchmarkBase
     {
@@ -32,7 +32,7 @@ namespace Benchmark
             InitializeDb();
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        [Benchmark(Description = "Hard-coded loop", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperRawLoop()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -52,7 +52,7 @@ new { Name = item.Name });
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        [Benchmark(Description = "Hard-coded bulk", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperRawBulk()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -69,7 +69,7 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        [Benchmark(Description = "Generic bulk (tuples)", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperGenericBulk()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -85,7 +85,7 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        [Benchmark(Description = "Generic bulk (arrays)", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperGenericBulkArray()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -101,7 +101,7 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount, Baseline = true)]
+        [Benchmark(Description = "Generic DbCommand (arrays)", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount, Baseline = true)]
         public void GenericDbCommand()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -117,7 +117,7 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        [Benchmark(Description = "Generic DbCommand (tuples)", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void Actual()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -133,7 +133,7 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        [Benchmark(Description = "Generic loop", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperGenericLoop()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -147,7 +147,7 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        [Benchmark(Description = "Generic loop (DynamicParameters)", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperGenericLoopDynamicParameters()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -161,7 +161,7 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        [Benchmark(Description = "CTE", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperCTE()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -176,7 +176,7 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
         }
 
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        [Benchmark(Description = "Multi-values", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
         public void DapperMultiValues()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -190,8 +190,8 @@ TestData.PrepopulatedAndNewArtists.Select(x => new { Name = x.Name }));
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
-        public void Ef()
+        [Benchmark(Description = "EF Core", OperationsPerInvoke = TestData.PrepopulatedAndNewArtistsCount)]
+        public void EF()
         {
             using (var transaction = Context.Database.BeginTransaction())
             {

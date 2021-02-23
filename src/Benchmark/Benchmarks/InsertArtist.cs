@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Benchmark
 {
-    [BenchmarkCategory(nameof(InsertArtist))]
+    [BenchmarkCategory("INSERT INTO Artists")]
     [IterationCount(20)]
     public class InsertArtist : BenchmarkBase
     {
@@ -32,7 +32,7 @@ namespace Benchmark
             InitializeDb();
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.NewArtistsCount)]
+        [Benchmark(Description = "Hard-coded loop", OperationsPerInvoke = TestData.NewArtistsCount)]
         public void DapperLoop()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -52,7 +52,7 @@ new { Name = item });
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.NewArtistsCount, Baseline = true)]
+        [Benchmark(Description = "Hard-coded bulk", OperationsPerInvoke = TestData.NewArtistsCount, Baseline = true)]
         public void DapperRawBulk()
         {
             using (var transaction = Context.Database.BeginTransaction())
@@ -68,8 +68,8 @@ TestData.NewArtistNames.Select(x => new { Name = x }));
             }
         }
 
-        [Benchmark(OperationsPerInvoke = TestData.NewArtistsCount)]
-        public void Ef()
+        [Benchmark(Description = "EF Core", OperationsPerInvoke = TestData.NewArtistsCount)]
+        public void EF()
         {
             using (var transaction = Context.Database.BeginTransaction())
             {

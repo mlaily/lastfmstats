@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.Runtime.CompilerServices;
 using Dapper;
+using System.Text;
+using System.Globalization;
 
 namespace LastFmStatsServer.Controllers
 {
@@ -29,6 +31,72 @@ namespace LastFmStatsServer.Controllers
 
         private static string NormalizeEmpty(string value) => string.IsNullOrWhiteSpace(value) ? "" : value.Trim();
         private static string GetNormalizedUserName(string userName) => NormalizeEmpty(userName?.ToLowerInvariant());
+
+        // http://colorbrewer2.org/#type=qualitative&scheme=Paired&n=12
+        private static readonly string[] Colors = new[]
+        {
+            "#a6cee3",
+            "#1f78b4",
+            "#b2df8a",
+            "#33a02c",
+            "#fb9a99",
+            "#e31a1c",
+            "#fdbf6f",
+            "#ff7f00",
+            "#cab2d6",
+            "#6a3d9a",
+            "#fff137", // changed. too light when opacity is not 1
+            "#b15928",
+        };
+        private static string GetColorForValue(string value)
+        {
+            using var md5 = System.Security.Cryptography.MD5.Create();
+            var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(value));
+            var index = hash[0] % Colors.Length; //  Colors.Length is assumed to be < 256 (a byte)
+            return Colors[index];
+        }
+
+        private enum ColorChoice
+        {
+            None,
+            Album,
+            Artist,
+        }
+
+        [HttpGet("{userName}")]
+        public IActionResult Get(string userName)
+        {
+            var data = (from scrobble in _mainContext.Scrobbles
+                        where scrobble.User.Name == GetNormalizedUserName(userName)
+                        orderby scrobble.Timestamp
+                        select new ScrobbleData(scrobble.Track.Artist.Name, scrobble.Track.Album.Name, scrobble.Timestamp, scrobble.Track.Name));
+
+            var time = new List<string>();
+            var color = new List<string>();
+            var displayValue = new List<string>();
+
+            var timeZone = "";
+            var targetTimeZone = string.IsNullOrWhiteSpace(timeZone) ? TimeZoneInfo.Utc : TimeZoneInfo.FindSystemTimeZoneById(timeZone);
+
+            var colorChoice = ColorChoice.Artist;
+
+            foreach (var scrobble in data)
+            {
+                var utcTimePlayed = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(scrobble.Timestamp), targetTimeZone);
+                time.Add(utcTimePlayed.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
+                var displayColor = colorChoice switch
+                {
+                    ColorChoice.None => "#400d73",
+                    ColorChoice.Album => GetColorForValue(scrobble.Album),
+                    ColorChoice.Artist => GetColorForValue(scrobble.Artist),
+                    _ => throw new NotSupportedException(),
+                };
+                color.Add(displayColor);
+                //displayValue.Add(displayColor.DisplayValue);
+            }
+
+            return new JsonResult(new { time, color, displayValue });
+        }
 
         [HttpGet("{userName}/resume-from")]
         public IActionResult GetResumeTimestamp(string userName)

@@ -227,7 +227,7 @@ type GetRecentTracksJson = Fable.JsonProvider.Generator<"""
 /// Fetch.fetch throws on non 200 status codes
 let saneFetch url props = GlobalFetch.fetch (RequestInfo.Url url, requestProps props)
 
-let private fetchJson url props parser =
+let fetchJson url props parser =
     promise {
         try
             let! response = saneFetch url props

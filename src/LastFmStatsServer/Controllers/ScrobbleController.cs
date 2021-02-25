@@ -50,9 +50,28 @@ namespace LastFmStatsServer.Controllers
         };
         private static string GetColorForValue(string value)
         {
-            using var md5 = System.Security.Cryptography.MD5.Create();
-            var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(value));
-            var index = hash[0] % Colors.Length; //  Colors.Length is assumed to be < 256 (a byte)
+            // https://andrewlock.net/why-is-string-gethashcode-different-each-time-i-run-my-program-in-net-core/
+            static int GetDeterministicHashCode(string str)
+            {
+                unchecked
+                {
+                    int hash1 = (5381 << 16) + 5381;
+                    int hash2 = hash1;
+
+                    for (int i = 0; i < str.Length; i += 2)
+                    {
+                        hash1 = ((hash1 << 5) + hash1) ^ str[i];
+                        if (i == str.Length - 1)
+                            break;
+                        hash2 = ((hash2 << 5) + hash2) ^ str[i + 1];
+                    }
+
+                    return hash1 + (hash2 * 1566083941);
+                }
+            }
+
+            int hash = Math.Abs(GetDeterministicHashCode(value));
+            var index = hash % Colors.Length;
             return Colors[index];
         }
 
@@ -69,13 +88,14 @@ namespace LastFmStatsServer.Controllers
             var data = (from scrobble in _mainContext.Scrobbles
                         where scrobble.User.Name == GetNormalizedUserName(userName)
                         orderby scrobble.Timestamp
-                        select new ScrobbleData(scrobble.Track.Artist.Name, scrobble.Track.Album.Name, scrobble.Timestamp, scrobble.Track.Name));
+                        select new ScrobbleData(scrobble.Track.Artist.Name, scrobble.Track.Album.Name, scrobble.Timestamp, scrobble.Track.Name))
+                        .AsNoTracking();
 
             var time = new List<string>();
             var color = new List<string>();
             var displayValue = new List<string>();
 
-            var timeZone = "";
+            var timeZone = TimeZoneInfo.Local.Id;
             var targetTimeZone = string.IsNullOrWhiteSpace(timeZone) ? TimeZoneInfo.Utc : TimeZoneInfo.FindSystemTimeZoneById(timeZone);
 
             var colorChoice = ColorChoice.Artist;
@@ -84,15 +104,15 @@ namespace LastFmStatsServer.Controllers
             {
                 var utcTimePlayed = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(scrobble.Timestamp), targetTimeZone);
                 time.Add(utcTimePlayed.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
-                var displayColor = colorChoice switch
-                {
-                    ColorChoice.None => "#400d73",
-                    ColorChoice.Album => GetColorForValue(scrobble.Album),
-                    ColorChoice.Artist => GetColorForValue(scrobble.Artist),
-                    _ => throw new NotSupportedException(),
-                };
-                color.Add(displayColor);
-                //displayValue.Add(displayColor.DisplayValue);
+                //var displayColor = colorChoice switch
+                //{
+                //    ColorChoice.None => "#400d73",
+                //    ColorChoice.Album => GetColorForValue(scrobble.Album),
+                //    ColorChoice.Artist => GetColorForValue(scrobble.Artist),
+                //    _ => throw new NotSupportedException(),
+                //};
+                color.Add(GetColorForValue(scrobble.Artist));
+                displayValue.Add($"{scrobble.Artist} - {scrobble.Track}{(string.IsNullOrWhiteSpace(scrobble.Album) ? "" : " (" + scrobble.Album + ")")}");
             }
 
             return new JsonResult(new { time, color, displayValue });

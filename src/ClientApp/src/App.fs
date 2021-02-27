@@ -120,21 +120,42 @@ myButton.onclick <- fun _ ->
             |> Async.StartAsPromise
     } |> Promise.start
 
-type GetUserScrobblesJson = Fable.JsonProvider.Generator< """{"time": ["2014-01-19 21:12:14"], "color": ["#e31a1c"], "displayValue": ["bla"]}""" >
+type GetUserScrobblesJson = Fable.JsonProvider.Generator< """{"time": [1234567890], "color": ["#e31a1c"], "displayValue": ["bla"]}""" >
 
-let getScrobbleData userName =
-    fetchJson $"{apiRoot}api/scrobbles/{userName}" [] GetUserScrobblesJson
-    |> Promise.map (function
-               | Ok ok -> ok
-               | Error error -> failwith $"Error while fetching scrobble data for {userName}: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
+let getScrobbleData userName fromTimestamp =
+    fetchJson $"{apiRoot}api/scrobbles/{userName}?fromTimestamp=%d{fromTimestamp}" [] GetUserScrobblesJson
+    // |> Promise.map (function
+    //            | Ok ok -> ok
+    //            | Error error -> failwith $"Error while fetching scrobble data for {userName}: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
+
+let loadAllScrobbleData userName =
+    let fetchPage fromTimestamp =
+        let fetchOne () =
+            getScrobbleData userName fromTimestamp
+            |> Promise.map (function
+                | Ok ok -> ok
+                | Error error -> failwith $"Error while fetching scrobble data for {userName}: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
+        retryPromise 10 (fun ex -> logToHtml $"An error occured: {ex.Message}\nRetrying...") fetchOne
+    let rec loadAllScrobbleData' fromTimestamp =
+        asyncSeq {
+            let! data = fetchPage fromTimestamp |> Async.AwaitPromise
+            let oldestTimestamp = data.time |> Seq.min |> int64
+
+            yield data
+
+            if data.time.Length > 0 && oldestTimestamp > 0L
+            then yield! loadAllScrobbleData' oldestTimestamp
+            else logToHtml "end"
+        }
+    loadAllScrobbleData' Int64.MaxValue
 
 let chartScrobbleData userName (data: GetUserScrobblesJson) =
     {|
         traces =
             [
                 traces.scattergl [
-                    scattergl.x data.time
-                    scattergl.y (data.time |> Seq.map (fun x -> $"1970-01-01 {x.Substring(11)}"))
+                    scattergl.x (data.time |> Seq.map (fun x -> $"""{DateTimeOffset.FromUnixTimeSeconds(x |> int64).ToString("yyyy-MM-dd HH:mm:ss")}"""))
+                    scattergl.y (data.time |> Seq.map (fun x -> $"""1970-01-01 {DateTimeOffset.FromUnixTimeSeconds(x |> int64).ToString("HH:mm:ss")}"""))
                     scattergl.text data.displayValue
                     scattergl.hoverinfo [
                         scattergl.hoverinfo.x
@@ -181,18 +202,32 @@ let chartScrobbleData userName (data: GetUserScrobblesJson) =
 // Plotly.extendTraces(graph, {x: [["2021-03-20 10:10:10"]], y: [["1970-01-01 10:10:10"]]}, [0])
 //Feliz.Plotly.Bindings.plotly.
 
+let plotly: obj = importAll "plotly.js-dist"
+window?plotly <- plotly
+
 myButton2.onclick <- fun _ ->
     myButton2.disabled <- true
     let userName = userNameInput.value
-    let root = document.getElementById "graph"
-    promise {
-        let! data = getScrobbleData userName
+    let graph = document.getElementById "graph"
+    loadAllScrobbleData userName
+    |> AsyncSeq.indexed
+    |> AsyncSeq.iter (fun (i, data) ->
         let chart = chartScrobbleData userName data
-        let plotly: obj = importAll "plotly.js-dist"
-        window?plotly <- plotly
         let jsTraces = (chart.traces |> plot.traces |> Bindings.getKV |> snd)
         let jsLayout = (chart.layout |> plot.layout |> Bindings.getKV |> snd)
-        let jsConfig = (chart.config |> plot.config |> Bindings.getKV |> snd)
-        plotly?plot(root, jsTraces, jsLayout, jsConfig)
-        //ReactDOM.render(chart, root)
-    } |> Promise.start
+        let jsConfig = (chart.config |> plot.config |> Bindings.getKV |> snd) 
+        if i = 0L
+        then
+            plotly?plot(graph, jsTraces, jsLayout, jsConfig)
+        else
+            let cast = jsTraces |> unbox<{| x: string array; y: string array; text: string array; marker: {| color: string array |} |} array>
+            let indices = cast |> Array.mapi (fun i trace -> i)
+            let update =
+                {|
+                    x = cast |> Array.map (fun trace -> trace.x)
+                    y = cast |> Array.map (fun trace -> trace.y)
+                    text = cast |> Array.map (fun trace -> trace.text)
+                    ``marker.color`` = cast |> Array.map (fun trace -> trace.marker.color)
+                |}
+            plotly?extendTraces(graph, update, indices))
+    |> Async.Start

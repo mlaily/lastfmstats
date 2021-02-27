@@ -83,13 +83,25 @@ namespace LastFmStatsServer.Controllers
         }
 
         [HttpGet("{userName}")]
-        public IActionResult Get(string userName)
+        public IActionResult Get(string userName, [FromQuery] long? nextPageToken = null, [FromQuery] int? pageSize = null)
         {
+            if (nextPageToken == null)
+                // nextPageToken is actually the timestamp limit in the query
+                nextPageToken = long.MaxValue;
+
+            var defaultPageSize = 50000;
+            if (pageSize == null || pageSize > defaultPageSize)
+                pageSize = defaultPageSize;
+
             var data = (from scrobble in _mainContext.Scrobbles
                         where scrobble.User.Name == GetNormalizedUserName(userName)
-                        orderby scrobble.Timestamp
+                        where scrobble.Timestamp < nextPageToken
+                        orderby scrobble.Timestamp descending
                         select new ScrobbleData(scrobble.Track.Artist.Name, scrobble.Track.Album.Name, scrobble.Timestamp, scrobble.Track.Name))
+                        .Take(pageSize.Value)
                         .AsNoTracking();
+
+            var totalCount = _mainContext.Scrobbles.Count(x => x.User.Name == GetNormalizedUserName(userName));
 
             var time = new List<string>();
             var color = new List<string>();
@@ -100,10 +112,17 @@ namespace LastFmStatsServer.Controllers
 
             var colorChoice = ColorChoice.Artist;
 
+            var oldestTimestamp = long.MaxValue;
             foreach (var scrobble in data)
             {
+                if (scrobble.Timestamp < oldestTimestamp)
+                    oldestTimestamp = scrobble.Timestamp;
+
                 var utcTimePlayed = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(scrobble.Timestamp), targetTimeZone);
                 time.Add(utcTimePlayed.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
+                //var tweakedUtcTimestamp = new DateTimeOffset(utcTimePlayed.DateTime, TimeSpan.Zero).ToUnixTimeSeconds();
+                //time.Add(tweakedUtcTimestamp);
+
                 //var displayColor = colorChoice switch
                 //{
                 //    ColorChoice.None => "#400d73",
@@ -115,7 +134,7 @@ namespace LastFmStatsServer.Controllers
                 displayValue.Add($"{scrobble.Artist} - {scrobble.Track}{(string.IsNullOrWhiteSpace(scrobble.Album) ? "" : " (" + scrobble.Album + ")")}");
             }
 
-            return new JsonResult(new { time, color, displayValue });
+            return new JsonResult(new { time, color, displayValue, totalCount, nextPageToken = oldestTimestamp });
         }
 
         [HttpGet("{userName}/resume-from")]

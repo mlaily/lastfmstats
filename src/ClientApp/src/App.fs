@@ -8,12 +8,9 @@ open Fetch
 open ApiModels
 open System
 open Thoth.Json
+open Feliz.Plotly
+open Fable.Core.JsInterop
 
-open Feliz
-open Feliz.Plotly
-open Feliz.prop
-open Feliz.Plotly
-open Feliz.Plotly
 
 let myButton = document.querySelector(".my-button") :?> Browser.Types.HTMLButtonElement
 let myButton2 = document.querySelector(".my-button2") :?> Browser.Types.HTMLButtonElement
@@ -132,53 +129,57 @@ let getScrobbleData userName =
                | Error error -> failwith $"Error while fetching scrobble data for {userName}: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
 
 let chartScrobbleData userName (data: GetUserScrobblesJson) =
-    Plotly.plot [
-        plot.traces [
-            traces.scattergl [
-                scattergl.x data.time
-                scattergl.y (data.time |> Seq.map (fun x -> $"1970-01-01 {x.Substring(11)}"))
-                scattergl.text data.displayValue
-                scattergl.hoverinfo [
-                    scattergl.hoverinfo.x
-                    scattergl.hoverinfo.text
-                ]
-                scattergl.mode.markers
-                scattergl.marker [
-                    marker.opacity 0.8
-                    marker.size 4
-                    marker.color data.color
-                ]
-            ]
-        ]
-        plot.layout [
-            layout.title $"{userName} - {data.time.Length} scrobbles"
-            layout.hovermode.closest
-            layout.xaxis [
-                xaxis.showgrid false
-                xaxis.zeroline true
-                xaxis.type'.date
-                xaxis.autorange.true'
-            ]
-            layout.yaxis [
-                yaxis.autorange.reversed
-                yaxis.showgrid true
-                yaxis.type'.date
-                yaxis.tickformat "%H:%M"
-                yaxis.nticks 24
-                yaxis.range [
-                    "1970-01-01 00:00:00"
-                    "1970-01-02 00:00:00"
+    {|
+        traces =
+            [
+                traces.scattergl [
+                    scattergl.x data.time
+                    scattergl.y (data.time |> Seq.map (fun x -> $"1970-01-01 {x.Substring(11)}"))
+                    scattergl.text data.displayValue
+                    scattergl.hoverinfo [
+                        scattergl.hoverinfo.x
+                        scattergl.hoverinfo.text
+                    ]
+                    scattergl.mode.markers
+                    scattergl.marker [
+                        marker.opacity 0.8
+                        marker.size 4
+                        marker.color data.color
+                    ]
                 ]
             ]
-        ]
-        plot.config [
-            config.responsive true
-            config.autosizable true
-            config.fillFrame true
-        ]
-        plot.style [
-        ]
-    ]
+        layout =
+            [
+                layout.title $"{userName} - {data.time.Length} scrobbles"
+                layout.hovermode.closest
+                layout.xaxis [
+                    xaxis.showgrid false
+                    xaxis.zeroline true
+                    xaxis.type'.date
+                    xaxis.autorange.true'
+                ]
+                layout.yaxis [
+                    yaxis.autorange.reversed
+                    yaxis.showgrid true
+                    yaxis.type'.date
+                    yaxis.tickformat "%H:%M"
+                    yaxis.nticks 24
+                    yaxis.range [
+                        "1970-01-01 00:00:00"
+                        "1970-01-02 00:00:00"
+                    ]
+                ]
+            ]
+        config =
+            [
+                config.responsive true
+                config.autosizable true
+                config.fillFrame true
+            ]
+    |}
+
+// Plotly.extendTraces(graph, {x: [["2021-03-20 10:10:10"]], y: [["1970-01-01 10:10:10"]]}, [0])
+//Feliz.Plotly.Bindings.plotly.
 
 myButton2.onclick <- fun _ ->
     myButton2.disabled <- true
@@ -187,5 +188,11 @@ myButton2.onclick <- fun _ ->
     promise {
         let! data = getScrobbleData userName
         let chart = chartScrobbleData userName data
-        ReactDOM.render(chart, root)
+        let plotly: obj = importAll "plotly.js-dist"
+        window?plotly <- plotly
+        let jsTraces = (chart.traces |> plot.traces |> Bindings.getKV |> snd)
+        let jsLayout = (chart.layout |> plot.layout |> Bindings.getKV |> snd)
+        let jsConfig = (chart.config |> plot.config |> Bindings.getKV |> snd)
+        plotly?plot(root, jsTraces, jsLayout, jsConfig)
+        //ReactDOM.render(chart, root)
     } |> Promise.start

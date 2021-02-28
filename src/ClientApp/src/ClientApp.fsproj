@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Util.fs" />
+    <Compile Include="LastFmApiTypes.fs" />
     <Compile Include="LastFmApi.fs" />
     <Compile Include="ServerApi.fs" />
     <Compile Include="Graph.fs" />

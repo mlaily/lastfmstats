@@ -3,13 +3,14 @@ namespace LastFMStats.Client
 open LastFMStats.Client.Util
 open LastFMStats.Client.ServerApi
 open Feliz.Plotly
-open Browser.Dom
 open Fable.Core.JsInterop
 open FSharp.Control
 
 module Graph =
 
-    let chartScrobbleData userName (data: GetUserScrobblesJson) =
+    let plotly: obj = importAll "plotly.js-dist"
+
+    let getUserChart userName (data: GetUserScrobblesJson) =
         {| traces =
                [ traces.scattergl [ scattergl.x data.time
                                     scattergl.y (
@@ -42,53 +43,49 @@ module Graph =
                  config.autosizable true
                  config.fillFrame true ] |}
 
-    let plotly: obj = importAll "plotly.js-dist"
-
     let generateGraph graph userName =
         loadAllScrobbleData userName
-            |> AsyncSeq.indexed
-            |> AsyncSeq.iter
-                (fun (i, data) ->
-                    let chart = chartScrobbleData userName data
+        |> AsyncSeq.indexed
+        |> AsyncSeq.iter
+            (fun (i, data) ->
+                let chart = getUserChart userName data
 
-                    let jsTraces =
-                        (chart.traces
-                         |> plot.traces
-                         |> Bindings.getKV
-                         |> snd)
+                let jsTraces =
+                    (chart.traces
+                     |> plot.traces
+                     |> Bindings.getKV
+                     |> snd)
 
-                    let jsLayout =
-                        (chart.layout
-                         |> plot.layout
-                         |> Bindings.getKV
-                         |> snd)
+                let jsLayout =
+                    (chart.layout
+                     |> plot.layout
+                     |> Bindings.getKV
+                     |> snd)
 
-                    let jsConfig =
-                        (chart.config
-                         |> plot.config
-                         |> Bindings.getKV
-                         |> snd)
+                let jsConfig =
+                    (chart.config
+                     |> plot.config
+                     |> Bindings.getKV
+                     |> snd)
 
-                    if i = 0L then
-                        plotly?plot (graph, jsTraces, jsLayout, jsConfig)
-                    else
-                        let cast =
-                            jsTraces
-                            |> unbox<{| x: string array
-                                        y: string array
-                                        text: string array
-                                        marker: {| color: string array |} |} array>
+                if i = 0L then
+                    plotly?plot (graph, jsTraces, jsLayout, jsConfig)
+                else
+                    let cast =
+                        jsTraces
+                        |> unbox<{| x: string array
+                                    y: string array
+                                    text: string array
+                                    marker: {| color: string array |} |} array>
 
-                        let indices = cast |> Array.mapi (fun i trace -> i)
+                    let indices = cast |> Array.mapi (fun i trace -> i)
 
-                        let update =
-                            {| x = cast |> Array.map (fun trace -> trace.x)
-                               y = cast |> Array.map (fun trace -> trace.y)
-                               text = cast |> Array.map (fun trace -> trace.text)
-                               ``marker.color`` =
-                                   cast
-                                   |> Array.map (fun trace -> trace.marker.color) |}
+                    let update =
+                        {| x = cast |> Array.map (fun trace -> trace.x)
+                           y = cast |> Array.map (fun trace -> trace.y)
+                           text = cast |> Array.map (fun trace -> trace.text)
+                           ``marker.color`` =
+                               cast
+                               |> Array.map (fun trace -> trace.marker.color) |}
 
-                        plotly?extendTraces (graph, update, indices))
-
-    window?plotly <- plotly
+                    plotly?extendTraces (graph, update, indices))

@@ -11,11 +11,11 @@ open Thoth.Json
 open Feliz.Plotly
 open Fable.Core.JsInterop
 
-let myButton =
-    document.querySelector (".my-button") :?> Browser.Types.HTMLButtonElement
+let scrapeButton =
+    document.querySelector ("#scrape-button") :?> Browser.Types.HTMLButtonElement
 
-let myButton2 =
-    document.querySelector (".my-button2") :?> Browser.Types.HTMLButtonElement
+let graphButton =
+    document.querySelector ("#graph-button") :?> Browser.Types.HTMLButtonElement
 
 let userNameInput =
     document.querySelector ("#username") :?> Browser.Types.HTMLInputElement
@@ -25,8 +25,9 @@ let outputHtml =
 
 let apiRoot = "http://localhost:5000/"
 
-let logToHtml msg =
-    outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br>{msg}"
+let log msg =
+    // outputHtml.innerHTML <- $"{outputHtml.innerHTML}<br>{msg}"
+    console.log msg
 
 let retryPromise maxRetries beforeRetry f =
     let rec loop retriesRemaining =
@@ -54,11 +55,9 @@ let fetchAllTracks userName from =
                 | Ok ok -> ok
                 | Error error ->
                     failwith
-                        $"Error while fetching tracks: {error.Response.StatusText} ({error.Response.Status}) - {
-                                                                                                                    error.Body
-                        }")
+                        $"Error while fetching tracks: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
 
-        retryPromise 10 (fun ex -> logToHtml $"An error occured: {ex.Message}\nRetrying...") fetchOne
+        retryPromise 10 (fun ex -> log $"An error occured: {ex.Message}\nRetrying...") fetchOne
 
     let rec fetchAllTracks' page =
         asyncSeq {
@@ -75,7 +74,7 @@ let fetchAllTracks userName from =
 
             yield refinedData
 
-            logToHtml $"Page {currentPage} - {refinedData.Length} tracks."
+            log $"Page {currentPage} - {refinedData.Length} tracks."
 
             if currentPage > 1 then
                 yield! fetchAllTracks' (page - 1) // Recurse from oldest page (totalPages) to first page (1)
@@ -87,7 +86,7 @@ let fetchAllTracks userName from =
         let totalPages =
             data.recenttracks.``@attr``.totalPages |> int
 
-        logToHtml $"Enumerating pages from {totalPages} to 1..."
+        log $"Enumerating pages from {totalPages} to 1..."
         return fetchAllTracks' totalPages
     }
 
@@ -110,9 +109,9 @@ let postScrobbles userName (scrobbles: ScrobbleData []) =
                   requestHeaders [ HttpRequestHeaders.ContentType "application/json" ]
                   RequestProperties.Body <| unbox (jsonBody) ]
 
-        logToHtml result.Status
+        log result.Status
         let! responseText = result.text ()
-        logToHtml responseText
+        log responseText
         ()
     }
 
@@ -125,16 +124,16 @@ let getResumeTimestamp userName =
                 $"{apiRoot}api/scrobbles/{userName}/resume-from"
                 [ requestHeaders [ HttpRequestHeaders.ContentType "application/json" ] ]
 
-        logToHtml result.Status
+        log result.Status
         let! responseText = result.text ()
-        logToHtml responseText
+        log responseText
         let parsed = ResumeFromInfoJson(responseText)
         return parsed.from |> int64
     }
 
-myButton.onclick <-
+scrapeButton.onclick <-
     fun _ ->
-        myButton.disabled <- true
+        scrapeButton.disabled <- true
         let userName = userNameInput.value
 
         promise {
@@ -146,7 +145,7 @@ myButton.onclick <-
                 |> AsyncSeq.iterAsync
                     (fun tracks ->
                         tracks
-                        |> Array.map (fun track -> mapScrobbleData track)
+                        |> Array.map mapScrobbleData
                         |> postScrobbles userName
                         |> Async.AwaitPromise)
                 |> Async.StartAsPromise
@@ -167,7 +166,7 @@ let loadAllScrobbleData userName =
                 | Error error ->
                     failwith
                         $"Error while fetching scrobble data for {userName}: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
-        retryPromise 10 (fun ex -> logToHtml $"An error occured: {ex.Message}\nRetrying...") fetchOne
+        retryPromise 10 (fun ex -> log $"An error occured: {ex.Message}\nRetrying...") fetchOne
 
     let rec loadAllScrobbleData' nextPageToken =
         asyncSeq {
@@ -218,9 +217,9 @@ let plotly: obj = importAll "plotly.js-dist"
 
 window?plotly <- plotly
 
-myButton2.onclick <-
+graphButton.onclick <-
     fun _ ->
-        myButton2.disabled <- true
+        graphButton.disabled <- true
         let userName = userNameInput.value
         let graph = document.getElementById "graph"
 

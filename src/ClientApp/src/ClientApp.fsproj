@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
@@ -6,7 +6,10 @@
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Util.fs" />
     <Compile Include="LastFmApi.fs" />
+    <Compile Include="ServerApi.fs" />
+    <Compile Include="Graph.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
   <ItemGroup>

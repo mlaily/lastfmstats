@@ -50,4 +50,4 @@ module App =
             graphButton.disabled <- true
             let userName = userNameInput.value
             let graph = document.getElementById "graph"
-            generateGraph graph userName |> Async.Start
+            generateGraph graph userName |> Async.StartImmediate

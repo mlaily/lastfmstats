@@ -25,5 +25,11 @@ module.exports = {
                 use: ["source-map-loader"],
             }
 		]
-	}
+	},
+    resolve: {
+        alias: {
+            // Use a smaller bundle since we only need scatter2d
+            'plotly.js/dist/plotly': path.join(__dirname, 'node_modules/plotly.js/dist/plotly-gl2d.min.js')
+        }
+    }
 }

@@ -8,7 +8,7 @@ open FSharp.Control
 
 module Graph =
 
-    let plotly: obj = importAll "plotly.js-dist"
+    let plotly: obj = importAll "plotly.js/dist/plotly"
 
     let getUserChart userName (data: GetUserScrobblesJson) =
         {| traces =

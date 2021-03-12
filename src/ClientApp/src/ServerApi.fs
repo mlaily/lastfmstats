@@ -14,7 +14,13 @@ module ServerApi =
     type ResumeFromInfoJson = Fable.JsonProvider.Generator<"""{ "from": 1420206818 }""">
 
     type GetUserScrobblesJson =
-        Fable.JsonProvider.Generator<"""{"time": ["2021-02-24 22:09:15"], "color": ["#e31a1c"], "displayValue": ["bla"], "totalCount": 123, "nextPageToken": 1614200955}""">
+        Fable.JsonProvider.Generator<"""{
+            "time": ["2021-02-24 22:09:15"],
+            "color": ["#e31a1c"],
+            "displayValue": ["bla"],
+            "totalCount": 123,
+            "nextPageToken": 1614200955
+            }""">
 
     let apiRoot = "http://localhost:5000/"
 
@@ -68,7 +74,8 @@ module ServerApi =
             asyncSeq {
                 let! data = fetchWithRetry nextPageToken |> Async.AwaitPromise
 
-                yield data
+                if data.time.Length > 0
+                then yield data
 
                 if data.time.Length > 0 && data.nextPageToken > 0. then
                     yield! loadAllScrobbleData' (Some(data.nextPageToken |> int64))

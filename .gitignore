@@ -2,3 +2,4 @@
 /src/ClientApp/public/bundle.js
 *.fs.js
 *.fs.js.map
+/src/ClientApp/output/

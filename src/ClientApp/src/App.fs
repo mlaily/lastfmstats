@@ -13,7 +13,7 @@ open Fable.Core.JsInterop
 
 module App =
 
-    window?plotly <- plotly
+    // window?plotly <- plotly
 
     let scrapeButton =
         document.querySelector ("#scrape-button") :?> Browser.Types.HTMLButtonElement

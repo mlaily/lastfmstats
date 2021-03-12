@@ -16,6 +16,9 @@ module.exports = {
         contentBase: "./public",
         port: 8080,
     },
+    externals: {
+        'plotly.js': 'Plotly'
+    },
 // https://github.com/MangelMaxime/fulma-demo/blob/3d7ad93234364bc40701d5b288e8ed3de12522be/webpack.config.js#L115-L119
 	module: {
 		rules: [
@@ -29,7 +32,7 @@ module.exports = {
     resolve: {
         alias: {
             // Use a smaller bundle since we only need scatter2d
-            'plotly.js/dist/plotly': path.join(__dirname, 'node_modules/plotly.js/dist/plotly-gl2d.min.js')
+            // 'plotly.js/dist/plotly': path.join(__dirname, 'node_modules/plotly.js/dist/plotly-gl2d.min.js')
         }
     }
 }

@@ -18,7 +18,6 @@
     <PackageReference Include="Fable.Core" Version="3.2.4" />
     <PackageReference Include="Fable.Fetch" Version="2.2.0" />
     <PackageReference Include="Fable.JsonProvider" Version="1.0.1" />
-    <PackageReference Include="Feliz.Plotly" Version="1.7.0" />
     <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" />
     <PackageReference Include="Thoth.Json" Version="5.1.0" />
   </ItemGroup>

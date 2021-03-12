@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Dapper;
+//using Dapper;
 using System.Runtime.CompilerServices;
 using System.Linq;
 using System.Text;

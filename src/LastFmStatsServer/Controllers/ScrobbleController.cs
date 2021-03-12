@@ -89,9 +89,9 @@ namespace LastFmStatsServer.Controllers
                 // nextPageToken is actually the timestamp limit in the query
                 nextPageToken = long.MaxValue;
 
-            var defaultPageSize = 50000;
-            if (pageSize == null || pageSize > defaultPageSize)
-                pageSize = defaultPageSize;
+            var maxPageSize = 1_000_000; //50000;
+            if (pageSize == null || pageSize > maxPageSize)
+                pageSize = maxPageSize;
 
             var data = (from scrobble in _mainContext.Scrobbles
                         where scrobble.User.Name == GetNormalizedUserName(userName)
@@ -107,10 +107,10 @@ namespace LastFmStatsServer.Controllers
             var color = new List<string>();
             var displayValue = new List<string>();
 
+            //var colorChoice = ColorChoice.Artist;
+
             var timeZone = TimeZoneInfo.Local.Id;
             var targetTimeZone = string.IsNullOrWhiteSpace(timeZone) ? TimeZoneInfo.Utc : TimeZoneInfo.FindSystemTimeZoneById(timeZone);
-
-            var colorChoice = ColorChoice.Artist;
 
             var oldestTimestamp = long.MaxValue;
             foreach (var scrobble in data)
@@ -118,9 +118,9 @@ namespace LastFmStatsServer.Controllers
                 if (scrobble.Timestamp < oldestTimestamp)
                     oldestTimestamp = scrobble.Timestamp;
 
-                var utcTimePlayed = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(scrobble.Timestamp), targetTimeZone);
-                time.Add(utcTimePlayed.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture));
-                //var tweakedUtcTimestamp = new DateTimeOffset(utcTimePlayed.DateTime, TimeSpan.Zero).ToUnixTimeSeconds();
+                time.Add(ConvertAndFormat(scrobble.Timestamp));
+
+                //var tweakedUtcTimestamp = new DateTimeOffset(utcTimePlayed.DateTime, TimeSpan.Zero).ToUnixTimeMilliseconds();
                 //time.Add(tweakedUtcTimestamp);
 
                 //var displayColor = colorChoice switch
@@ -134,7 +134,20 @@ namespace LastFmStatsServer.Controllers
                 displayValue.Add($"{scrobble.Artist} - {scrobble.Track}{(string.IsNullOrWhiteSpace(scrobble.Album) ? "" : " (" + scrobble.Album + ")")}");
             }
 
-            return new JsonResult(new { time, color, displayValue, totalCount, nextPageToken = oldestTimestamp });
+            return new JsonResult(new
+            {
+                time,
+                color,
+                displayValue,
+                totalCount,
+                nextPageToken = oldestTimestamp,
+            });
+
+            string ConvertAndFormat(long timestamp)
+            {
+                var utcTimePlayed = TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(timestamp), targetTimeZone);
+                return utcTimePlayed.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+            }
         }
 
         [HttpGet("{userName}/resume-from")]

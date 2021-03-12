@@ -53,10 +53,10 @@ module Graph =
 
                     let config =
                         {| responsive = true
-                           autosizeable = true
-                           fillFrame = true |}
+                           autosizeable = true |}
 
                     plotly?plot (graph, traces, layout, config)
+                    
                 else // page index > 0
                     let update =
                         {| x = [| x |]

@@ -13,8 +13,6 @@ open Fable.Core.JsInterop
 
 module App =
 
-    // window?plotly <- plotly
-
     let scrapeButton =
         document.querySelector ("#scrape-button") :?> Browser.Types.HTMLButtonElement
 
@@ -43,6 +41,7 @@ module App =
                             |> Async.AwaitPromise)
                     |> Async.StartAsPromise
             }
+            |> Promise.tap (fun _ -> scrapeButton.disabled <- false)
             |> Promise.start
 
     graphButton.onclick <-
@@ -50,4 +49,7 @@ module App =
             graphButton.disabled <- true
             let userName = userNameInput.value
             let graph = document.getElementById "graph"
-            generateGraph graph userName |> Async.StartImmediate
+
+            generateGraph graph userName
+            |> Async.tap (fun _ -> graphButton.disabled <- false)
+            |> Async.StartImmediate

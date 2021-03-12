@@ -6,6 +6,13 @@ open Fetch
 
 module Util =
 
+    module Async =
+        let map f computation =
+            async.Bind(computation, f >> async.Return)
+            
+        let tap f computation =
+            computation |> map (fun x -> f x; x)
+
     type FetchResponse = { Response: Response; Body: string }
 
     let log msg = console.log msg
@@ -51,3 +58,4 @@ module Util =
             | Error error ->
                 failwith
                     $"Error while fetching data: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
+

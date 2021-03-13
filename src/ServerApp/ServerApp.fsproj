@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -7,7 +7,8 @@
 
   <ItemGroup>
     <Compile Include="WeatherForecast.fs" />
-    <Compile Include="Controllers/WeatherForecastController.fs" />
+    <Compile Include="Controllers\WeatherForecastController.fs" />
+    <Compile Include="Controllers\ScrobbleController.fs" />
     <Compile Include="Startup.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

@@ -24,7 +24,7 @@ module ServerApi =
 
     let apiRoot = "http://localhost:5000/"
 
-    let postScrobbles userName (scrobbles: ScrobbleData []) =
+    let postScrobbles userName (scrobbles: FlatScrobble []) =
         promise {
             //let extraCoders = Extra.empty |> (Extra.withCustom <|| dateTimeResolver)
             let jsonBody =

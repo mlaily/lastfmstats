@@ -54,7 +54,7 @@ module Program =
     let remotingHandler : HttpHandler =
         Remoting.createApi()
         //|> Remoting.withRouteBuilder (sprintf "/api/%s/%s")
-        |> Remoting.fromContext mainApi
+        |> Remoting.fromContext createMainApi
         |> Remoting.withBinarySerialization
         |> Remoting.buildHttpHandler
 

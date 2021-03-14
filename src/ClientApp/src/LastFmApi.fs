@@ -20,10 +20,9 @@ module LastFmApi =
 
         let fetchWithRetry page =
             let fetchPage () =
-                fetchParse
+                fetchParse<GetRecentTracksJson>
                     $"https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=%s{userName}&api_key={lastFmApiKey}&format=json&limit=%d{batchSize}&page=%d{page}&from=%d{from}"
                     []
-                    GetRecentTracksJson
                 |> unwrapOrFail
 
             retryPromise 10 (fun ex -> log $"An error occured: {ex.Message}\nRetrying...") fetchPage

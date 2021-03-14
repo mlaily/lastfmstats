@@ -12,7 +12,6 @@ open Fetch
 open Fable.Core.JsInterop
 
 module App =
-
     let scrapeButton =
         document.querySelector ("#scrape-button") :?> Browser.Types.HTMLButtonElement
 
@@ -53,3 +52,18 @@ module App =
             generateGraph graph userName
             |> Async.tap (fun _ -> graphButton.disabled <- false)
             |> Async.StartImmediate
+
+    // [<Emit("""{"list": [ "a", "b", "c"], "time": [123456, 7891011120]}""")>]
+    // let rawJson : obj = jsNative
+
+    // type MyType = {
+    //     list: string []
+    //     time: int64 []
+    // }
+
+    // let testStr = Fable.Core.JS.JSON.stringify rawJson
+    // console.log testStr
+
+    // let testUnbox : MyType = unbox rawJson
+    // let access = testUnbox.time.Length
+    // console.log access

@@ -11,17 +11,6 @@ open Fable.Core
 
 module ServerApi =
 
-    type ResumeFromInfoJson = Fable.JsonProvider.Generator<"""{ "from": 1420206818 }""">
-
-    type GetUserScrobblesJson =
-        Fable.JsonProvider.Generator<"""{
-            "time": ["2021-02-24 22:09:15"],
-            "color": ["#e31a1c"],
-            "displayValue": ["bla"],
-            "totalCount": 123,
-            "nextPageToken": 1614200955
-            }""">
-
     let apiRoot = "http://localhost:5000/"
 
     let postScrobbles userName (scrobbles: FlatScrobble []) =
@@ -51,10 +40,9 @@ module ServerApi =
                     [ requestHeaders [ ContentType "application/json" ] ]
 
             log result.Status
-            let! responseText = result.text ()
-            log responseText
-            let parsed = ResumeFromInfoJson(responseText)
-            return parsed.from |> int64
+            let! responseText = result.json ()
+            let parsed : GetResumeTimestampResponse = unbox responseText
+            return parsed.ResumeFrom
         }
 
     let loadAllScrobbleData userName =
@@ -65,7 +53,7 @@ module ServerApi =
                     | None -> ""
                     | Some value -> $"nextPageToken={value}"
 
-                fetchParse $"{apiRoot}api/scrobbles/%s{userName}?{nextPageTokenQueryParam}" [] GetUserScrobblesJson
+                fetchParse<GetChartDataResponse> $"{apiRoot}api/scrobbles/%s{userName}?{nextPageTokenQueryParam}" []
                 |> unwrapOrFail
 
             retryPromise 10 (fun ex -> log $"An error occured: {ex.Message}\nRetrying...") fetchPage
@@ -74,11 +62,11 @@ module ServerApi =
             asyncSeq {
                 let! data = fetchWithRetry nextPageToken |> Async.AwaitPromise
 
-                if data.time.Length > 0
+                if data.Timestamps.Length > 0
                 then yield data
 
-                if data.time.Length > 0 && data.nextPageToken > 0. then
-                    yield! loadAllScrobbleData' (Some(data.nextPageToken |> int64))
+                if data.Timestamps.Length > 0 then
+                    yield! loadAllScrobbleData' (Some(data.NextPageToken))
             }
 
         loadAllScrobbleData' None

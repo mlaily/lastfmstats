@@ -13,7 +13,7 @@ module Util =
         let tap f computation =
             computation |> map (fun x -> f x; x)
 
-    type FetchResponse = { Response: Response; Body: string }
+    type FetchResponse = { Response: Response; Body: obj }
 
     let log msg = console.log msg
 
@@ -36,17 +36,16 @@ module Util =
     let saneFetch url props =
         GlobalFetch.fetch (RequestInfo.Url url, requestProps props)
 
-    let fetchParse url props parser =
+    let fetchParse<'Response> url props =
         promise {
             try
                 let! response = saneFetch url props
-                let! body = response.text ()
-
+                let! jsonBody = response.json ()
+                let parsed = unbox<'Response> jsonBody
                 if response.Ok then
-                    let parsed = parser body // Ignore exceptions here for now
                     return Ok parsed
                 else
-                    return Error { Response = response; Body = body }
+                    return Error { Response = response; Body = jsonBody }
             with ex -> return raise ex
         }
 

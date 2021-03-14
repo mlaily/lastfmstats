@@ -10,6 +10,7 @@ open Fable.Core
 open Fetch.Types
 open Fetch
 open Fable.Core.JsInterop
+// open Fable.Core.DynamicExtensions
 
 module App =
     let scrapeButton =
@@ -53,17 +54,34 @@ module App =
             |> Async.tap (fun _ -> graphButton.disabled <- false)
             |> Async.StartImmediate
 
-    // [<Emit("""{"list": [ "a", "b", "c"], "time": [123456, 7891011120]}""")>]
+    // [<Emit("""{"list": [ "a", "b", "c"], "time": [123456, 7891011120], "testObj": {"a": 42, "b": 43}}""")>]
     // let rawJson : obj = jsNative
 
     // type MyType = {
-    //     list: string []
+    //     list: string[]
     //     time: int64 []
+    //     testObj: Hash<int>
     // }
 
     // let testStr = Fable.Core.JS.JSON.stringify rawJson
     // console.log testStr
 
     // let testUnbox : MyType = unbox rawJson
-    // let access = testUnbox.time.Length
-    // console.log access
+
+    // console.log (testUnbox.testObj.Keys() |> Array.map (fun x -> x + "cool!"))
+    // console.log (testUnbox.testObj.Values()|> Array.map (fun x -> x*10))
+    // console.log (testUnbox.testObj.Entries()|> Array.map (fun (k,v) -> $"{k}={v}"))
+    // console.log (testUnbox.testObj.HasKey "a")
+    // console.log (testUnbox.testObj.HasKey "ab")
+    // console.log (testUnbox.testObj.HasKey "toString")
+
+    // testUnbox.testObj.Clear()
+
+    // console.log (testUnbox.testObj.Keys() |> Array.map (fun x -> x + "cool!"))
+    // console.log (testUnbox.testObj.Values()|> Array.map (fun x -> x*10))
+    // console.log (testUnbox.testObj.Entries()|> Array.map (fun (k,v) -> $"{k}={v}"))
+    // console.log (testUnbox.testObj.HasKey "a")
+    // console.log (testUnbox.testObj.HasKey "ab")
+    // console.log (testUnbox.testObj.HasKey "toString")
+
+    // let access = testUnbox.list.Length

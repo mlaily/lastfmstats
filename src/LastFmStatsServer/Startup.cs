@@ -29,7 +29,12 @@ namespace LastFmStatsServer
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(x =>
+            {
+                // The types are used directly on the client side so
+                // it's important to keep the names unchanged
+                x.JsonSerializerOptions.PropertyNamingPolicy = null;
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "LastFmStatsServer", Version = "v1" });

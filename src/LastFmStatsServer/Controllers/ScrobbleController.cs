@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using ApiModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +11,7 @@ using System.Runtime.CompilerServices;
 using Dapper;
 using System.Text;
 using System.Globalization;
+using static ApiModels;
 
 namespace LastFmStatsServer.Controllers
 {
@@ -83,7 +83,7 @@ namespace LastFmStatsServer.Controllers
         }
 
         [HttpGet("{userName}")]
-        public IActionResult Get(string userName, [FromQuery] long? nextPageToken = null, [FromQuery] int? pageSize = null)
+        public GetChartDataResponse Get(string userName, [FromQuery] long? nextPageToken = null, [FromQuery] int? pageSize = null)
         {
             if (nextPageToken == null)
                 // nextPageToken is actually the timestamp limit in the query
@@ -97,7 +97,7 @@ namespace LastFmStatsServer.Controllers
                         where scrobble.User.Name == GetNormalizedUserName(userName)
                         where scrobble.Timestamp < nextPageToken
                         orderby scrobble.Timestamp descending
-                        select new ScrobbleData(scrobble.Track.Artist.Name, scrobble.Track.Album.Name, scrobble.Timestamp, scrobble.Track.Name))
+                        select new FlatScrobble(scrobble.Track.Artist.Name, scrobble.Track.Album.Name, scrobble.Track.Name,scrobble.Timestamp))
                         .Take(pageSize.Value)
                         .AsNoTracking();
 
@@ -134,14 +134,7 @@ namespace LastFmStatsServer.Controllers
                 displayValue.Add($"{scrobble.Artist} - {scrobble.Track}{(string.IsNullOrWhiteSpace(scrobble.Album) ? "" : " (" + scrobble.Album + ")")}");
             }
 
-            return new JsonResult(new
-            {
-                time,
-                color,
-                displayValue,
-                totalCount,
-                nextPageToken = oldestTimestamp,
-            });
+            return new GetChartDataResponse(time.ToArray(), color.ToArray(), displayValue.ToArray(), oldestTimestamp, totalCount);
 
             string ConvertAndFormat(long timestamp)
             {
@@ -151,7 +144,7 @@ namespace LastFmStatsServer.Controllers
         }
 
         [HttpGet("{userName}/resume-from")]
-        public IActionResult GetResumeTimestamp(string userName)
+        public GetResumeTimestampResponse GetResumeTimestamp(string userName)
         {
             var lastKnownTimestamp = (from scrobble in _mainContext.Scrobbles
                                       where scrobble.User.Name == GetNormalizedUserName(userName)
@@ -163,22 +156,24 @@ namespace LastFmStatsServer.Controllers
             var fromValue = lastKnownTimestamp - backInTimeSeconds;
             if (fromValue < 0) fromValue = 0;
 
-            return new JsonResult(new { from = fromValue });
+            return new GetResumeTimestampResponse((long)fromValue);
         }
 
         [HttpPost("{userName}")]
-        public IActionResult Post(string userName, ScrobbleData[] data)
+        public InsertScrobblesResponse Post(string userName, FlatScrobble[] data)
         {
             if (data == null)
             {
-                return new JsonResult(new { SavedCount = 0 });
+                return new InsertScrobblesResponse(0, 0, 0, 0, 0);
+                //return new JsonResult(new { SavedCount = 0 });
             }
 
             if (data.Length > 1000)
             {
                 var result = new JsonResult(new { Error = "Too much data. Stay at or below 1000." });
                 result.StatusCode = (int)HttpStatusCode.BadRequest;
-                return result;
+                //return result;
+                throw new Exception("> 1000");
             }
 
 
@@ -186,7 +181,7 @@ namespace LastFmStatsServer.Controllers
             var lowerTimestampLimit = new DateTimeOffset(2000, 01, 01, 0, 0, 0, TimeSpan.Zero).ToUnixTimeSeconds();
             var filteredData = (from datum in data
                                 where datum.Timestamp > lowerTimestampLimit
-                                let refined = new ScrobbleData(NormalizeEmpty(datum.Artist), NormalizeEmpty(datum.Album), datum.Timestamp, NormalizeEmpty(datum.Track))
+                                let refined = new FlatScrobble(NormalizeEmpty(datum.Artist), NormalizeEmpty(datum.Album), NormalizeEmpty(datum.Track), datum.Timestamp)
                                 // Disallow null values. This is to ensure UNIQUE constraints work as expected with SQLite...
                                 where refined.Artist != null && refined.Album != null && refined.Track != null
                                 select refined)
@@ -221,14 +216,7 @@ namespace LastFmStatsServer.Controllers
 
                     transaction.Commit();
 
-                    return new JsonResult(new
-                    {
-                        newUserCount,
-                        newArtistNameCount,
-                        newAlbumNameCount,
-                        newTrackCount,
-                        newScrobbleCount,
-                    });
+                    return new InsertScrobblesResponse(newUserCount, newArtistNameCount, newAlbumNameCount, newTrackCount, newScrobbleCount);
                 }
                 catch (Exception)
                 {

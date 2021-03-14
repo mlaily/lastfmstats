@@ -208,7 +208,7 @@ let createMainApi (httpContext: HttpContext) : IMainApi =
                         OldestTimestamp = Int64.MaxValue
                         Timestamps = []
                         Colors = []
-                        Text = []
+                        Texts = []
                     |},
                     data)
                     ||> Seq.fold (fun state flatScrobble ->
@@ -223,17 +223,17 @@ let createMainApi (httpContext: HttpContext) : IMainApi =
                             Colors =
                                 getColorForValue flatScrobble.Artist
                                 :: state.Colors
-                            Text =
+                            Texts =
                                 let parenthesis =
                                     if flatScrobble.Album = "" then ""
                                     else $"({flatScrobble.Album})"
                                 $"{flatScrobble.Artist} - {flatScrobble.Track}{parenthesis}"
-                                :: state.Text
+                                :: state.Texts
                         |})
 
-                return { Timestamps = result.Timestamps
-                         Colors = result.Colors
-                         Text = result.Text
+                return { Timestamps = result.Timestamps |> Array.ofList
+                         Colors = result.Colors |> Array.ofList
+                         Texts = result.Texts |> Array.ofList
                          NextPageToken = result.OldestTimestamp
                          TotalCount = totalCount }
             }

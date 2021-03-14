@@ -27,9 +27,9 @@ type GetChartRequestOptions = {
 }
 
 type GetChartDataResponse = {
-    Timestamps: string list
-    Colors: string list
-    Text: string list
+    Timestamps: string[]
+    Colors: string[]
+    Texts: string[]
     // Paging properties:
     NextPageToken: int64
     TotalCount: int
@@ -37,6 +37,6 @@ type GetChartDataResponse = {
 
 type IMainApi = {
     getResumeTimestamp: UserName -> Async<GetResumeTimestampResponse>
-    insertScrobbles: UserName -> FlatScrobble list -> Async<Result<InsertScrobblesResponse, string>>
+    insertScrobbles: UserName -> FlatScrobble[] -> Async<Result<InsertScrobblesResponse, string>>
     getChartData: UserName -> GetChartRequestOptions -> Async<GetChartDataResponse>
 }

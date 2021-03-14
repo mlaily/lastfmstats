@@ -10,6 +10,7 @@ open Fable.Core
 open Fetch.Types
 open Fetch
 open Fable.Core.JsInterop
+open ApiModels
 
 module App =
 
@@ -28,8 +29,8 @@ module App =
             let userName = userNameInput.value
 
             promise {
-                let! from = getResumeTimestamp userName
-                let! data = fetchAllTracks userName from
+                let! resumeTimestampResponse = mainApi.getResumeTimestamp (UserName userName) |> Async.StartAsPromise
+                let! data = fetchAllTracks userName (resumeTimestampResponse.ResumeFrom)
 
                 do!
                     data
@@ -37,8 +38,8 @@ module App =
                         (fun tracks ->
                             tracks
                             |> Array.map mapTrackToScrobbleData
-                            |> postScrobbles userName
-                            |> Async.AwaitPromise)
+                            |> mainApi.insertScrobbles (UserName userName)
+                            |> Async.Ignore)
                     |> Async.StartAsPromise
             }
             |> Promise.tap (fun _ -> scrapeButton.disabled <- false)
@@ -53,3 +54,9 @@ module App =
             generateGraph graph userName
             |> Async.tap (fun _ -> graphButton.disabled <- false)
             |> Async.StartImmediate
+
+    async {
+        let! result = ServerApi.mainApi.getResumeTimestamp (UserName "yaurthek")
+        console.log result
+    }
+    |> Async.StartImmediate

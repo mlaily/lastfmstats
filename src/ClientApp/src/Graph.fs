@@ -15,10 +15,10 @@ module Graph =
         |> AsyncSeq.indexed
         |> AsyncSeq.iter
             (fun (pageIndex, pageData) ->
-                let x = pageData.time
-                let y = pageData.time |> Array.map (fun x -> $"1970-01-01 {x.Substring(11)}")
-                let text = pageData.displayValue
-                let color = pageData.color
+                let x = pageData.Timestamps
+                let y = pageData.Timestamps |> Array.map (fun x -> $"1970-01-01 {x.Substring(11)}")
+                let text = pageData.Texts
+                let color = pageData.Colors
 
                 if pageIndex = 0L then
                     let traces =
@@ -34,7 +34,7 @@ module Graph =
                               hovertemplate = "%{x|%a %Y-%m-%d %H:%M:%S}<br>%{text}<extra></extra>" |} |]
 
                     let layout =
-                        {| title = $"{userName} - {pageData.totalCount} scrobbles"
+                        {| title = $"{userName} - {pageData.TotalCount} scrobbles"
                            hovermode = "closest"
                            xaxis =
                                {| showgrid = false

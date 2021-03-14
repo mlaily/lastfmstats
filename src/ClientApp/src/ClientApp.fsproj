@@ -20,6 +20,7 @@
     <PackageReference Include="Fable.JsonProvider" Version="1.0.1" />
     <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" />
     <PackageReference Include="Thoth.Json" Version="5.1.0" />
+    <PackageReference Include="Fable.Remoting.Client" Version="7.6.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Shared\Shared.fsproj" />

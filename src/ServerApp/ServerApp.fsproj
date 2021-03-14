@@ -6,10 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="WeatherForecast.fs" />
-    <Compile Include="Controllers\WeatherForecastController.fs" />
-    <Compile Include="Controllers\ScrobbleController.fs" />
-    <Compile Include="Startup.fs" />
+    <Compile Include="Utils.fs" />
+    <Compile Include="Business.fs" />
+    <Compile Include="HttpHandlers.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
@@ -19,13 +18,19 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.13" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+    <PackageReference Include="Giraffe" Version="4.1.0" />
+    <PackageReference Include="Thoth.Json.Giraffe" Version="4.3.0" />
+    <PackageReference Include="Fable.Remoting.Giraffe" Version="4.17.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Dapper\Dapper\Dapper.csproj" />
     <ProjectReference Include="..\RelationalSchema\RelationalSchema.csproj" />
     <ProjectReference Include="..\Shared\Shared.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="5.0.1" />
   </ItemGroup>
 
 </Project>

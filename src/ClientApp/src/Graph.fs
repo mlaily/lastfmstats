@@ -15,23 +15,25 @@ module Graph =
         |> AsyncSeq.indexed
         |> AsyncSeq.iter
             (fun (pageIndex, pageData) ->
-                let x = pageData.Timestamps
-                let y = pageData.Timestamps |> Array.map (fun x -> "1970-01-01 " + x.Substring(11))
-                let text = pageData.Texts
-                let color = pageData.Colors
+                //let x = pageData.Timestamps
+                //let y = pageData.Timestamps |> Array.map (fun x -> "1970-01-01 " + x.Substring(11))
+                //let text = pageData.Texts
+                //let color = pageData.Colors
 
                 if pageIndex = 0L then
                     let traces =
-                        [| {| x = x
-                              y = y
-                              text = text
-                              ``type`` = "scattergl"
-                              mode = "markers"
-                              marker =
-                                  {| opacity = 0.8
-                                     size = 4
-                                     color = color |}
-                              hovertemplate = "%{x|%a %Y-%m-%d %H:%M:%S}<br>%{text}<extra></extra>" |} |]
+                        pageData.Data.Entries()
+                        |> Array.map (fun (color, data) ->
+                            {| x = data.Timestamps
+                               y = data.Timestamps |> Array.map (fun x -> "1970-01-01 " + x.Substring(11))
+                               text = data.Texts
+                               ``type`` = "scattergl"
+                               mode = "markers"
+                               marker =
+                                   {| opacity = 0.8
+                                      size = 4
+                                      color = color |}
+                               hovertemplate = "%{x|%a %Y-%m-%d %H:%M:%S}<br>%{text}<extra></extra>" |} )
 
                     let layout =
                         {| title = $"{userName} - {pageData.TotalCount} scrobbles"
@@ -58,10 +60,12 @@ module Graph =
                     plotly?plot (graph, traces, layout, config)
                     
                 else // page index > 0
-                    let update =
-                        {| x = [| x |]
-                           y = [| y |]
-                           text = [| text |]
-                           ``marker.color`` = [| color |] |}
-                    let traceIndices = [| 0 |]
-                    plotly?extendTraces (graph, update, traceIndices))
+                    ()
+                    //let update =
+                    //    {| x = [| x |]
+                    //       y = [| y |]
+                    //       text = [| text |]
+                    //       ``marker.color`` = [| color |] |}
+                    //let traceIndices = [| 0 |]
+                    //plotly?extendTraces (graph, update, traceIndices)
+                    )

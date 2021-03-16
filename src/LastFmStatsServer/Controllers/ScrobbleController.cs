@@ -12,6 +12,7 @@ using Dapper;
 using System.Text;
 using System.Globalization;
 using static ApiModels;
+using Microsoft.FSharp.Collections;
 
 namespace LastFmStatsServer.Controllers
 {
@@ -97,15 +98,16 @@ namespace LastFmStatsServer.Controllers
                         where scrobble.User.Name == GetNormalizedUserName(userName)
                         where scrobble.Timestamp < nextPageToken
                         orderby scrobble.Timestamp descending
-                        select new FlatScrobble(scrobble.Track.Artist.Name, scrobble.Track.Album.Name, scrobble.Track.Name,scrobble.Timestamp))
+                        select new FlatScrobble(scrobble.Track.Artist.Name, scrobble.Track.Album.Name, scrobble.Track.Name, scrobble.Timestamp))
                         .Take(pageSize.Value)
                         .AsNoTracking();
 
             var totalCount = _mainContext.Scrobbles.Count(x => x.User.Name == GetNormalizedUserName(userName));
 
-            var time = new List<string>();
-            var color = new List<string>();
-            var displayValue = new List<string>();
+            var time = new Dictionary<string, List<string>>(Colors.Select(x => KeyValuePair.Create(x, new List<string>())));
+            var displayValue = new Dictionary<string, List<string>>(Colors.Select(x => KeyValuePair.Create(x, new List<string>())));
+
+            var traces = new Dictionary<string, (List<string> Timestamps, List<string> Texts)>(Colors.Select(x => KeyValuePair.Create(x, (new List<string>(), new List<string>()))));
 
             //var colorChoice = ColorChoice.Artist;
 
@@ -118,8 +120,6 @@ namespace LastFmStatsServer.Controllers
                 if (scrobble.Timestamp < oldestTimestamp)
                     oldestTimestamp = scrobble.Timestamp;
 
-                time.Add(ConvertAndFormat(scrobble.Timestamp));
-
                 //var tweakedUtcTimestamp = new DateTimeOffset(utcTimePlayed.DateTime, TimeSpan.Zero).ToUnixTimeMilliseconds();
                 //time.Add(tweakedUtcTimestamp);
 
@@ -130,11 +130,14 @@ namespace LastFmStatsServer.Controllers
                 //    ColorChoice.Artist => GetColorForValue(scrobble.Artist),
                 //    _ => throw new NotSupportedException(),
                 //};
-                color.Add(GetColorForValue(scrobble.Artist));
-                displayValue.Add($"{scrobble.Artist} - {scrobble.Track}{(string.IsNullOrWhiteSpace(scrobble.Album) ? "" : " (" + scrobble.Album + ")")}");
+                var color = GetColorForValue(scrobble.Artist);
+                traces[color].Timestamps.Add(ConvertAndFormat(scrobble.Timestamp));
+                traces[color].Texts.Add($"{scrobble.Artist} - {scrobble.Track}{(string.IsNullOrWhiteSpace(scrobble.Album) ? "" : " (" + scrobble.Album + ")")}");
             }
-
-            return new GetChartDataResponse(time.ToArray(), color.ToArray(), displayValue.ToArray(), oldestTimestamp, totalCount);
+            //new Dictionary(
+            return new GetChartDataResponse(
+                new Utils.Hash<ChartTrace>(traces.Select(x => KeyValuePair.Create(x.Key, new ChartTrace(x.Value.Timestamps.ToArray(), x.Value.Texts.ToArray())))),
+                oldestTimestamp, totalCount);
 
             string ConvertAndFormat(long timestamp)
             {

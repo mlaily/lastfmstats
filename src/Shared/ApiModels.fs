@@ -1,5 +1,7 @@
 ﻿module ApiModels
 
+open Utils
+
 type FlatScrobble = {
     Artist: string
     Album: string
@@ -26,10 +28,12 @@ type GetChartRequestOptions = {
     PageSize: int option
 }
 
-type GetChartDataResponse = {
+type ChartTrace = {
     Timestamps: string[]
-    Colors: string[]
     Texts: string[]
+}
+type GetChartDataResponse = {
+    Data: Hash<ChartTrace>
     // Paging properties:
     NextPageToken: int64
     TotalCount: int

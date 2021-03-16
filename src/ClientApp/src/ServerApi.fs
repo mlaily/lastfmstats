@@ -62,10 +62,9 @@ module ServerApi =
             asyncSeq {
                 let! data = fetchWithRetry nextPageToken |> Async.AwaitPromise
 
-                if data.Timestamps.Length > 0
-                then yield data
-
-                if data.Timestamps.Length > 0 then
+                if data.Data.Values() |> Array.exists (fun x -> x.Timestamps.Length > 0)
+                then
+                    yield data
                     yield! loadAllScrobbleData' (Some(data.NextPageToken))
             }
 

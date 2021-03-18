@@ -13,6 +13,7 @@ open Fable.Core.JsInterop
 // open Fable.Core.DynamicExtensions
 
 module App =
+    
     let scrapeButton =
         document.querySelector ("#scrape-button") :?> Browser.Types.HTMLButtonElement
 
@@ -49,9 +50,15 @@ module App =
             graphButton.disabled <- true
             let userName = userNameInput.value
             let graph = document.getElementById "graph"
+            let loader : Browser.Types.HTMLDivElement = downcast document.createElement "div"
+            loader.innerText <- "Loading..."
 
+            loader.setAttribute ("style", "position: absolute; margin: auto; top: 0; right: 0; bottom: 0; left: 0; width: 100px; height: 30px;") |> ignore
+            graph.appendChild loader |> ignore
             generateGraph graph userName
-            |> Async.tap (fun _ -> graphButton.disabled <- false)
+            |> Async.tap (fun _ ->
+                graphButton.disabled <- false
+                graph.removeChild loader |> ignore)
             |> Async.StartImmediate
 
     // [<Emit("""{"list": [ "a", "b", "c"], "time": [123456, 7891011120], "testObj": {"a": 42, "b": 43}}""")>]

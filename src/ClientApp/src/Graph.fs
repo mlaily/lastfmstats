@@ -5,6 +5,7 @@ open LastFMStats.Client.ServerApi
 open Fable.Core.JsInterop
 open FSharp.Control
 open Browser.Dom
+open Fable.Core
 
 module Graph =
 
@@ -13,55 +14,58 @@ module Graph =
     let generateGraph graph userName =
         loadAllScrobbleData userName
         |> AsyncSeq.indexed
-        |> AsyncSeq.iter
+        |> AsyncSeq.iterAsync
             (fun (pageIndex, pageData) ->
-                let x = pageData.Timestamps
-                let y = pageData.Timestamps |> Array.map (fun x -> "1970-01-01 " + x.Substring(11))
-                let text = pageData.Texts
-                let color = pageData.Colors
+                async {
+                    let x = pageData.Timestamps
+                    let y = pageData.Timestamps |> Array.map (fun x -> "1970-01-01 " + x.Substring(11))
+                    let text = pageData.Texts
+                    let color = pageData.Colors
 
-                if pageIndex = 0L then
-                    let traces =
-                        [| {| x = x
-                              y = y
-                              text = text
-                              ``type`` = "scattergl"
-                              mode = "markers"
-                              marker =
-                                  {| opacity = 0.8
-                                     size = 4
-                                     color = color |}
-                              hovertemplate = "%{x|%a %Y-%m-%d %H:%M:%S}<br>%{text}<extra></extra>" |} |]
+                    if pageIndex = 0L then
+                        let traces =
+                            [| {| x = x
+                                  y = y
+                                  text = text
+                                  ``type`` = "scattergl"
+                                  mode = "markers"
+                                  marker =
+                                      {| opacity = 0.8
+                                         size = 4
+                                         color = color |}
+                                  hovertemplate = "%{x|%a %Y-%m-%d %H:%M:%S}<br>%{text}<extra></extra>" |} |]
 
-                    let layout =
-                        {| title = $"{userName} - {pageData.TotalCount} scrobbles"
-                           hovermode = "closest"
-                           xaxis =
-                               {| showgrid = false
-                                  zeroline = true
-                                  ``type`` = "date"
-                                  autorange = true |}
-                           yaxis =
-                               {| autorange = "reversed"
-                                  showgrid = true
-                                  ``type`` = "date"
-                                  tickformat = "%H:%M"
-                                  ntick = 24
-                                  range =
-                                      [| "1970-01-01 00:00:00"
-                                         "1970-01-02 00:00:00" |] |} |}
+                        let layout =
+                            {| title = $"{userName} - {pageData.TotalCount} scrobbles"
+                               hovermode = "closest"
+                               xaxis =
+                                   {| showgrid = false
+                                      zeroline = true
+                                      ``type`` = "date"
+                                      autorange = true |}
+                               yaxis =
+                                   {| autorange = "reversed"
+                                      showgrid = true
+                                      ``type`` = "date"
+                                      tickformat = "%H:%M"
+                                      ntick = 24
+                                      range =
+                                          [| "1970-01-01 00:00:00"
+                                             "1970-01-02 00:00:00" |] |} |}
 
-                    let config =
-                        {| responsive = true
-                           autosizeable = true |}
+                        let config =
+                            {| responsive = true
+                               autosizeable = true |}
 
-                    plotly?plot (graph, traces, layout, config)
-                    
-                else // page index > 0
-                    let update =
-                        {| x = [| x |]
-                           y = [| y |]
-                           text = [| text |]
-                           ``marker.color`` = [| color |] |}
-                    let traceIndices = [| 0 |]
-                    plotly?extendTraces (graph, update, traceIndices))
+                        let p : JS.Promise<obj> = plotly?newPlot (graph, traces, layout, config)
+                        do! p |> Async.AwaitPromise |> Async.Ignore
+                    else // page index > 0
+                        let update =
+                            {| x = [| x |]
+                               y = [| y |]
+                               text = [| text |]
+                               ``marker.color`` = [| color |] |}
+                        let traceIndices = [| 0 |]
+                        let p : JS.Promise<obj> = plotly?extendTraces (graph, update, traceIndices)
+                        do! p |> Async.AwaitPromise |> Async.Ignore
+                })

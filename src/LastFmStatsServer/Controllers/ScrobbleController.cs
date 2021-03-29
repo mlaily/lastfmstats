@@ -30,31 +30,6 @@ namespace LastFmStatsServer.Controllers
             _logger = logger;
         }
 
-        // http://colorbrewer2.org/#type=qualitative&scheme=Paired&n=12
-        private static readonly string[] Colors = new[]
-        {
-            "#a6cee3",
-            "#1f78b4",
-            "#b2df8a",
-            "#33a02c",
-            "#fb9a99",
-            "#e31a1c",
-            "#fdbf6f",
-            "#ff7f00",
-            "#cab2d6",
-            "#6a3d9a",
-            "#fff137", // changed. too light when opacity is not 1
-            "#b15928",
-        };
-
-
-        private enum ColorChoice
-        {
-            None,
-            Album,
-            Artist,
-        }
-
         [HttpGet("{userName}/resume-from")]
         public GetResumeTimestampResponse GetResumeTimestamp(string userName)
         {
@@ -144,6 +119,13 @@ namespace LastFmStatsServer.Controllers
             }
         }
 
+        private enum ColorChoice
+        {
+            None,
+            Album,
+            Artist,
+        }
+
         [HttpGet("{userName}")]
         public GetChartDataResponse Get(string userName, [FromQuery] long? nextPageToken = null, [FromQuery] int? pageSize = null)
         {
@@ -155,15 +137,21 @@ namespace LastFmStatsServer.Controllers
             if (pageSize == null || pageSize > maxPageSize)
                 pageSize = maxPageSize;
 
-            var data = (from scrobble in _mainContext.Scrobbles
-                        where scrobble.User.Name == Utils.NormalizeUserName(userName)
-                        where scrobble.Timestamp < nextPageToken
-                        orderby scrobble.Timestamp descending
-                        select new FlatScrobble(scrobble.Track.Artist.Name, scrobble.Track.Album.Name, scrobble.Track.Name, scrobble.Timestamp))
-                        .Take(pageSize.Value)
-                        .AsNoTracking();
+            var normalizedUserName = Utils.NormalizeUserName(userName);
 
-            var totalCount = _mainContext.Scrobbles.Count(x => x.User.Name == Utils.NormalizeUserName(userName));
+            var scrobbles = (from scrobble in _mainContext.Scrobbles
+                             where scrobble.User.Name == normalizedUserName
+                             where scrobble.Timestamp < nextPageToken
+                             orderby scrobble.Timestamp descending
+                             select new FlatScrobble(
+                                 scrobble.Track.Artist.Name,
+                                 scrobble.Track.Album.Name,
+                                 scrobble.Track.Name,
+                                 scrobble.Timestamp))
+                            .Take(pageSize.Value)
+                            .AsNoTracking();
+
+            var totalCount = _mainContext.Scrobbles.Count(x => x.User.Name == normalizedUserName);
 
             var time = new List<string>();
             var color = new List<string>();
@@ -175,7 +163,7 @@ namespace LastFmStatsServer.Controllers
             var targetTimeZone = string.IsNullOrWhiteSpace(timeZone) ? TimeZoneInfo.Utc : TimeZoneInfo.FindSystemTimeZoneById(timeZone);
 
             var oldestTimestamp = long.MaxValue;
-            foreach (var scrobble in data)
+            foreach (var scrobble in scrobbles)
             {
                 if (scrobble.Timestamp < oldestTimestamp)
                     oldestTimestamp = scrobble.Timestamp;
@@ -192,11 +180,16 @@ namespace LastFmStatsServer.Controllers
                 //    ColorChoice.Artist => GetColorForValue(scrobble.Artist),
                 //    _ => throw new NotSupportedException(),
                 //};
-                color.Add(Utils.MapToArrayValue(scrobble.Artist, Colors));
+                color.Add(Utils.MapToArrayValue(scrobble.Artist, Utils.Colors));
                 displayValue.Add($"{scrobble.Artist} - {scrobble.Track}{(string.IsNullOrWhiteSpace(scrobble.Album) ? "" : " (" + scrobble.Album + ")")}");
             }
 
-            return new GetChartDataResponse(time.ToArray(), color.ToArray(), displayValue.ToArray(), oldestTimestamp, totalCount);
+            return new GetChartDataResponse(
+                timestamps: time.ToArray(),
+                colors: color.ToArray(),
+                texts: displayValue.ToArray(),
+                nextPageToken: oldestTimestamp,
+                totalCount: totalCount);
 
             string ConvertAndFormat(long timestamp)
             {

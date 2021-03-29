@@ -1,5 +1,9 @@
 ﻿module ApiModels
 
+type GenericError = {
+    Error: string
+}
+
 type FlatScrobble = {
     Artist: string
     Album: string

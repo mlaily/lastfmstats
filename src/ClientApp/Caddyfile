@@ -1,0 +1,13 @@
+:8080 {
+	log {
+		level DEBUG
+		format console
+	}
+	reverse_proxy /api/* localhost:5000
+	# root /C:/* .
+	root * build
+	file_server browse
+	encode zstd gzip
+	header /*.js Content-Type application/javascript
+
+}

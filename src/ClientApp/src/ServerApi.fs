@@ -58,14 +58,13 @@ module ServerApi =
 
             retryPromise 10 (fun ex -> log $"An error occured: {ex.Message}\nRetrying...") fetchPage
 
+        let mutable currentCount = 0
         let rec loadAllScrobbleData' nextPageToken =
             asyncSeq {
                 let! data = fetchWithRetry nextPageToken |> Async.AwaitPromise
-
-                if data.Timestamps.Length > 0
-                then yield data
-
-                if data.Timestamps.Length > 0 then
+                yield data
+                currentCount <- currentCount + data.Timestamps.Length
+                if currentCount < data.TotalCount then
                     yield! loadAllScrobbleData' (Some(data.NextPageToken))
             }
 

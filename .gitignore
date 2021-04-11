@@ -3,3 +3,4 @@
 *.fs.js
 *.fs.js.map
 /src/ClientApp/output/
+/src/ClientApp/build/

@@ -11,7 +11,7 @@ open Fable.Core
 
 module ServerApi =
 
-    let apiRoot = "http://localhost:5000/"
+    let apiRoot = "/"
 
     let postScrobbles userName (scrobbles: FlatScrobble []) =
         promise {

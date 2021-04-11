@@ -2,10 +2,12 @@ dotnet tool restore
 
 rmdir /S /Q build
 
-REM start /b dotnet dotnet-serve --directory build --open-browser --port 8080
+mkdir build
+
+start /b dotnet dotnet-serve --directory build --open-browser --port 8080 --reverse-proxy /api/{**all}=http://localhost:5000
 
 REM watch CaddyFile
-start /b caddy run -watch
+REM start /b caddy run -watch
 
 "C:\Users\Melvyn\Desktop\Fable\src\Fable.Cli\bin\Debug\netcoreapp3.1\fable.exe" watch src --outDir build --sourceMaps --sourceMapsRoot "file:///" --runWatch copy src\index.html build
 

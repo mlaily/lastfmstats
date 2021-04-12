@@ -13,7 +13,7 @@ module ServerApi =
 
     let apiRoot = "/"
 
-    let postScrobbles userName (scrobbles: FlatScrobble []) =
+    let postScrobbles (log: ILogger) userName (scrobbles: FlatScrobble []) =
         promise {
             //let extraCoders = Extra.empty |> (Extra.withCustom <|| dateTimeResolver)
             let jsonBody =
@@ -26,26 +26,26 @@ module ServerApi =
                       requestHeaders [ ContentType "application/json" ]
                       Body <| unbox (jsonBody) ]
 
-            log result.Status
+            log.LogDebug (result.Status.ToString())
             let! responseText = result.text ()
-            log responseText
+            log.LogDebug responseText
             ()
         }
 
-    let getResumeTimestamp userName =
+    let getResumeTimestamp (log: ILogger) userName =
         promise {
             let! result =
                 saneFetch
                     $"{apiRoot}api/scrobbles/{userName}/resume-from"
                     [ requestHeaders [ ContentType "application/json" ] ]
 
-            log result.Status
+            log.LogDebug (result.Status.ToString())
             let! responseText = result.json ()
             let parsed : GetResumeTimestampResponse = unbox responseText
             return parsed.ResumeFrom
         }
 
-    let loadAllScrobbleData userName =
+    let loadAllScrobbleData (log: ILogger) userName =
         let fetchWithRetry (nextPageToken: int64 option) =
             let fetchPage () =
                 let nextPageTokenQueryParam =
@@ -56,7 +56,7 @@ module ServerApi =
                 fetchParse<GetChartDataResponse> $"{apiRoot}api/scrobbles/%s{userName}?{nextPageTokenQueryParam}" []
                 |> unwrapOrFail
 
-            retryPromise 10 (fun ex -> log $"An error occured: {ex.Message}\nRetrying...") fetchPage
+            retryPromise 10 (fun ex -> log.LogAlways $"An error occured: {ex.Message}\nRetrying...") fetchPage
 
         let mutable currentCount = 0
         let rec loadAllScrobbleData' nextPageToken =

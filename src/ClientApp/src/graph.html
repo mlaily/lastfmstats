@@ -1,0 +1,44 @@
+﻿<!doctype html>
+<html>
+<head>
+  <title>Last.Fm stats</title>
+  <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        .maximizeHeight {
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .maximizeSize {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="queryForm">
+        <form method="get" action="/">
+            <h3>Options:</h3>
+            Color:
+            <select name="color">
+            </select>
+            <br />
+            Timezone:
+            <select name="timezone">
+            </select>
+            <br />
+            Time window:
+            from <input type="date" name="startDate" value="" />
+            to <input type="date" name="endDate" value="" />
+            <input type="hidden" name="userName" value="" />
+            <br />
+            <input type="submit" />
+        </form>
+    </div>
+    <div id="graph"></div>
+    <script src="https://cdn.plot.ly/plotly-gl2d-latest.min.js" defer></script>
+    <script src="Scripts/Pages/GraphPage.js" type="module"></script>
+</body>
+</html>

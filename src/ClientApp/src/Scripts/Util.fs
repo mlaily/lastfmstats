@@ -16,9 +16,17 @@ module Util =
         let tap f computation =
             computation |> map (fun x -> f x; x)
 
-    type FetchResponse = { Response: Response; Body: obj }
+    type ILogger =
+        abstract member LogAlways : msg:string -> unit
+        abstract member LogDebug : msg:string -> unit
 
-    let log msg = console.log msg
+    type ConsoleLogger() =
+        interface ILogger with
+            member this.LogAlways msg = console.log msg
+            member this.LogDebug msg = console.log msg
+        static member Default = new ConsoleLogger()
+
+    type FetchResponse = { Response: Response; Body: obj }
 
     let retryPromise maxRetries beforeRetry f =
         let rec loop retriesRemaining =

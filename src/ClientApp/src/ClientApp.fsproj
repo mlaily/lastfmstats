@@ -5,19 +5,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Compile Include="Util.fs" />
-    <Compile Include="LastFmApiTypes.fs" />
-    <Compile Include="LastFmApi.fs" />
-    <Compile Include="ServerApi.fs" />
-    <Compile Include="Graph.fs" />
-    <Compile Include="App.fs" />
-  </ItemGroup>
-  <ItemGroup>
+    <Compile Include="Scripts\Util.fs" />
+    <Compile Include="Scripts\LastFmApiTypes.fs" />
+    <Compile Include="Scripts\LastFmApi.fs" />
+    <Compile Include="Scripts\ServerApi.fs" />
+    <Compile Include="Scripts\UI.fs" />
+    <Compile Include="Scripts\Pages\RefreshPage.fs" />
+    <Compile Include="Scripts\Pages\GraphPage.fs" />
+    <None Include="refresh.html" />
+    <None Include="graph.html" />
     <None Include="index.html" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fable.Browser.Dom" Version="2.2.0" />
+    <PackageReference Include="Fable.Browser.Url" Version="1.0.0" />
     <PackageReference Include="Fable.Core" Version="3.2.5" />
     <PackageReference Include="Fable.Fetch" Version="2.2.0" />
     <PackageReference Include="Fable.JsonProvider" Version="1.0.1" />

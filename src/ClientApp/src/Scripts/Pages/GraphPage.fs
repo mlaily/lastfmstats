@@ -1,4 +1,4 @@
-namespace LastFMStats.Client
+namespace LastFMStats.Client.Pages
 
 open LastFMStats.Client.Util
 open LastFMStats.Client.ServerApi
@@ -6,13 +6,26 @@ open Fable.Core.JsInterop
 open FSharp.Control
 open Browser.Dom
 open Fable.Core
+open Browser
+open LastFMStats.Client
 
-module Graph =
+module GraphPage =
+
+    /// Styles defined on the page matching classes.
+    let pageStyleClasses = {|
+        maximizeHeight = "maximizeHeight"
+        maximizeSize = "maximizeSize"
+    |}
+    let queryForm = document.getElementById "queryForm"
+    let graph = document.getElementById "graph"
+    let graphLoader = UI.getLoader graph
+
+    let userNameFromQueryParams = Url.URLSearchParams.Create(window.location.search).get("userName")
 
     let plotly : obj = window?Plotly
 
     let generateGraph graph userName =
-        loadAllScrobbleData userName
+        loadAllScrobbleData (ConsoleLogger.Default) userName
         |> AsyncSeq.indexed
         |> AsyncSeq.iterAsync
             (fun (pageIndex, pageData) ->
@@ -59,7 +72,7 @@ module Graph =
 
                         let p : JS.Promise<obj> = plotly?newPlot (graph, traces, layout, config)
                         do! p |> Async.AwaitPromise |> Async.Ignore
-                    else // page index > 0
+                    else // page index > 0, meaning we need to add the new data to an existing chart
                         let update =
                             {| x = [| x |]
                                y = [| y |]
@@ -69,3 +82,15 @@ module Graph =
                         let p : JS.Promise<obj> = plotly?extendTraces (graph, update, traceIndices)
                         do! p |> Async.AwaitPromise |> Async.Ignore
                 })
+
+    match userNameFromQueryParams with
+    | None -> graph.hidden <- true
+    | Some userName ->
+        queryForm.hidden <- true
+        document.documentElement.className <- pageStyleClasses.maximizeHeight
+        document.body.className <- pageStyleClasses.maximizeHeight
+        graph.className <- pageStyleClasses.maximizeSize
+        graphLoader.enable()
+        generateGraph graph userName
+        |> Async.tap (fun _ -> graphLoader.disable())
+        |> Async.StartImmediate

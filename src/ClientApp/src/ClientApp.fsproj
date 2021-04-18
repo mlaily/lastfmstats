@@ -11,7 +11,7 @@
     <Compile Include="Scripts\LastFmApiTypes.fs" />
     <Compile Include="Scripts\LastFmApi.fs" />
     <Compile Include="Scripts\ServerApi.fs" />
-    <Compile Include="Scripts\UI.fs" />
+    <Compile Include="Scripts\WebUtils.fs" />
     <Compile Include="Scripts\Pages\RefreshPage.fs" />
     <Compile Include="Scripts\Pages\GraphPage.fs" />
     <None Include="refresh.html" />

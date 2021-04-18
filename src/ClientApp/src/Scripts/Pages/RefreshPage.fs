@@ -7,12 +7,18 @@ open Browser.Dom
 open FSharp.Control
 open Fable.Core
 open Browser
+open LastFMStats.Client
 
 module RefreshPage =
 
     let queryButton = document.querySelector ("#query-button") :?> Browser.Types.HTMLButtonElement
     let userNameInput = document.querySelector ("#userName") :?> Browser.Types.HTMLInputElement
     let outputDiv = document.querySelector ("#output") :?> Browser.Types.HTMLParagraphElement
+
+    let defaultUserName = WebUtils.getUserNameFromQueryParams()
+
+    if defaultUserName.IsSome
+    then userNameInput.value <- defaultUserName.Value
 
     let outputLogger =
         let createElement msg style =
@@ -23,6 +29,7 @@ module RefreshPage =
             element
         { new ILogger with
             member this.LogAlways msg = outputDiv.appendChild (createElement msg "color: black") |> ignore
+            member this.LogWarning msg = outputDiv.appendChild (createElement msg "color: orangered") |> ignore
             member this.LogDebug msg = outputDiv.appendChild (createElement msg "color: gray") |> ignore }
 
     userNameInput.onkeyup <-
@@ -38,7 +45,7 @@ module RefreshPage =
 
             promise {
                 let! from = getResumeTimestamp outputLogger userName
-                let! data = fetchAllTracks outputLogger userName from
+                let! data = fetchAllTracks outputLogger userName (int64 from)
 
                 do!
                     data
@@ -47,13 +54,14 @@ module RefreshPage =
                             tracks
                             |> Array.map mapTrackToScrobbleData
                             |> postScrobbles outputLogger userName
-                            |> Async.AwaitPromise)
+                            |> Async.AwaitPromise
+                            |> Async.Ignore)
                     |> Async.StartAsPromise
             }
-            |> Promise.catch (fun _ ->
-                outputLogger.LogAlways "Aborted!"
+            |> Promise.catch (fun x ->
+                outputLogger.LogWarning $"Aborted! - {x.Message}"
                 queryButton.disabled <- false)
             |> Promise.tap (fun _ ->
-                outputLogger.LogAlways "Done!"
+                outputLogger.LogAlways "The End."
                 queryButton.disabled <- false)
             |> Promise.start

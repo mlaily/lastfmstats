@@ -162,13 +162,13 @@ namespace LastFmStatsServer.Controllers
             var timeZone = TimeZoneInfo.Local.Id;
             var targetTimeZone = string.IsNullOrWhiteSpace(timeZone) ? TimeZoneInfo.Utc : TimeZoneInfo.FindSystemTimeZoneById(timeZone);
 
-            var oldestTimestamp = long.MaxValue;
+            var oldestTimestamp = double.MaxValue;
             foreach (var scrobble in scrobbles)
             {
                 if (scrobble.Timestamp < oldestTimestamp)
                     oldestTimestamp = scrobble.Timestamp;
 
-                time.Add(ConvertAndFormat(scrobble.Timestamp));
+                time.Add(ConvertAndFormat((long)scrobble.Timestamp));
 
                 //var tweakedUtcTimestamp = new DateTimeOffset(utcTimePlayed.DateTime, TimeSpan.Zero).ToUnixTimeMilliseconds();
                 //time.Add(tweakedUtcTimestamp);

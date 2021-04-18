@@ -8,6 +8,7 @@ open Fetch.Types
 open Fetch
 open FSharp.Control
 open Fable.Core
+open System
 
 module ServerApi =
 
@@ -15,38 +16,39 @@ module ServerApi =
 
     let postScrobbles (log: ILogger) userName (scrobbles: FlatScrobble []) =
         promise {
-            //let extraCoders = Extra.empty |> (Extra.withCustom <|| dateTimeResolver)
+            //let extraCoders = Extra.empty |> Extra.withInt64 |> (Extra.withCustom <|| dateTimeResolver)
             let jsonBody =
-                Encode.Auto.toString (0, scrobbles, CaseStrategy.CamelCase, Extra.empty |> Extra.withInt64)
+                Encode.Auto.toString (0, scrobbles, CaseStrategy.CamelCase, Extra.empty)
+
+            log.LogDebug $"Saving {scrobbles.Length} scrobbles..."
 
             let! result =
-                saneFetch
+                fetchParse<InsertScrobblesResponse>
                     $"{apiRoot}api/scrobbles/{userName}"
                     [ Method HttpMethod.POST
                       requestHeaders [ ContentType "application/json" ]
                       Body <| unbox (jsonBody) ]
+                |> unwrapOrFail
 
-            log.LogDebug (result.Status.ToString())
-            let! responseText = result.text ()
-            log.LogDebug responseText
-            ()
+            log.LogAlways $"Actually saved after deduplication: {JS.JSON.stringify result}"
+            return result
         }
 
     let getResumeTimestamp (log: ILogger) userName =
         promise {
             let! result =
-                saneFetch
+                fetchParse<GetResumeTimestampResponse>
                     $"{apiRoot}api/scrobbles/{userName}/resume-from"
                     [ requestHeaders [ ContentType "application/json" ] ]
+                |> unwrapOrFail
 
-            log.LogDebug (result.Status.ToString())
-            let! responseText = result.json ()
-            let parsed : GetResumeTimestampResponse = unbox responseText
-            return parsed.ResumeFrom
+            log.LogDebug $"Resuming fetching from timestamp {result.ResumeFrom} ({DateTimeOffset.FromUnixTimeSeconds(int64 result.ResumeFrom)})"
+
+            return result.ResumeFrom
         }
 
     let loadAllScrobbleData (log: ILogger) userName =
-        let fetchWithRetry (nextPageToken: int64 option) =
+        let fetchWithRetry (nextPageToken: float option) =
             let fetchPage () =
                 let nextPageTokenQueryParam =
                     match nextPageToken with

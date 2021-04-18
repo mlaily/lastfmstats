@@ -19,11 +19,13 @@ module Util =
     type ILogger =
         abstract member LogAlways : msg:string -> unit
         abstract member LogDebug : msg:string -> unit
+        abstract member LogWarning : msg:string -> unit
 
     type ConsoleLogger() =
         interface ILogger with
             member this.LogAlways msg = console.log msg
-            member this.LogDebug msg = console.log msg
+            member this.LogDebug msg = console.log ("DBG: " + msg)
+            member this.LogWarning msg = console.log ("WRN: " + msg)
         static member Default = new ConsoleLogger()
 
     type FetchResponse = { Response: Response; Body: obj }
@@ -51,13 +53,16 @@ module Util =
         promise {
             try
                 let! response = saneFetch url props
-                let! jsonBody = response.json ()
-                let parsed = unbox<'Response> jsonBody
-                if response.Ok then
-                    return Ok parsed
-                else
-                    return Error { Response = response; Body = jsonBody }
-            with ex -> return raise ex
+                try
+                    let! jsonBody = response.json()
+                    let parsed = unbox<'Response> jsonBody
+                    if response.Ok then
+                        return Ok parsed
+                    else
+                        return Error { Response = response; Body = jsonBody }
+                with ex ->
+                    return raise (Exception($"fetchParse error. Http status: {response.StatusText} ({response.Status}).", ex))
+            with ex -> return raise ex // Failure without any response available
         }
 
     let unwrapOrFail fetchPromise =
@@ -67,5 +72,5 @@ module Util =
             | Ok ok -> ok
             | Error error ->
                 failwith
-                    $"Error while fetching data: {error.Response.StatusText} ({error.Response.Status}) - {error.Body}")
+                    $"Error while fetching data: {error.Response.StatusText} ({error.Response.Status}) - {JS.JSON.stringify error.Body}")
 

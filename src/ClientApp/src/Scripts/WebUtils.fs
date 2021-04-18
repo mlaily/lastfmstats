@@ -3,7 +3,7 @@
 open Browser
 open Fable.Core
 
-module UI =
+module WebUtils =
 
     let getLoader (target: Browser.Types.HTMLElement) =
         let loader : Browser.Types.HTMLDivElement = downcast document.createElement "div"
@@ -23,3 +23,5 @@ module UI =
            disable = fun () ->
             JS.clearInterval(timerToken)
             target.removeChild loader |> ignore |}
+
+    let getUserNameFromQueryParams () = Url.URLSearchParams.Create(window.location.search).get("userName")

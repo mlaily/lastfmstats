@@ -15,29 +15,42 @@
             height: 100%;
             width: 100%;
         }
+
+        #queryForm {
+            padding: 16px;
+            line-height: 1.6em;
+        }
+
+       /* #queryForm form > * {
+            padding-bottom: px;
+        }*/
     </style>
 </head>
 <body>
+    <div id="graph"></div>
     <div id="queryForm">
         <form method="get" action="/">
             <h3>Options:</h3>
-            Color:
-            <select name="color">
+            <label for="userName">Last.Fm user name:</label>
+            <input type="text" name="userName" id="userName" value="" />
+            <br />
+            <label for="color">Color:</label>
+            <select name="color" id="color">
             </select>
             <br />
-            Timezone:
-            <select name="timezone">
+            <label for="timezone">Timezone:</label>
+            <select name="timezone" id="timezone">
             </select>
             <br />
             Time window:
-            from <input type="date" name="startDate" value="" />
-            to <input type="date" name="endDate" value="" />
-            <input type="hidden" name="userName" value="" />
+            <label for="startDate">from </label>
+            <input type="date" name="startDate" id="startDate" value="" />
+            <label for="endDate">to </label>
+            <input type="date" name="endDate" id="endDate" value="" />
             <br />
             <input type="submit" />
         </form>
     </div>
-    <div id="graph"></div>
     <script src="https://cdn.plot.ly/plotly-gl2d-latest.min.js" defer></script>
     <script src="Scripts/Pages/GraphPage.js" type="module"></script>
 </body>

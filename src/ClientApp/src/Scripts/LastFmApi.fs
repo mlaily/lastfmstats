@@ -40,27 +40,27 @@ module LastFmApi =
                                 x.``@attr``.nowplaying.ToUpperInvariant() = "FALSE"
                             with _ -> true)
 
-                yield refinedData
-
                 log.LogAlways $"Page {currentPage} - {refinedData.Length} tracks."
+
+                yield refinedData
 
                 if currentPage > 1 then
                     yield! loop (page - 1) // Recurse from oldest page (totalPages) to first page (1)
             }
 
         promise {
-            log.LogAlways "Fetching last.fm tracks first page to get the total page count..."
+            log.LogDebug "Fetching last.fm 'tracks' page count..."
             let! firstPage = fetchWithRetry 1 // Only used for the total pages number (used as the initial page)
 
             let totalPages =
                 firstPage.recenttracks.``@attr``.totalPages |> int
 
-            log.LogAlways $"Enumerating last.fm tracks pages backward from {totalPages} to 1..."
+            log.LogAlways $"Fetching last.fm 'tracks' pages from {totalPages} (oldest) to 1 (most recent)..."
             return loop totalPages
         }
 
     let mapTrackToScrobbleData (track: GetRecentTracksJson.Recenttracks.Track) =
         { Artist = track.artist.``#text``
           Album = track.album.``#text``
-          Timestamp = int64 track.date.uts
+          Timestamp = float track.date.uts
           Track = track.name }

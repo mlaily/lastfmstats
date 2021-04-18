@@ -4,7 +4,7 @@ rmdir /S /Q build
 
 mkdir build
 
-start /b dotnet dotnet-serve --directory build --open-browser --port 8080 --reverse-proxy /api/{**all}=http://localhost:5000
+start /b dotnet dotnet-serve --directory build --open-browser --port 8080 --reverse-proxy /api/{**all}=http://localhost:5000 -h "Cache-Control: no-store, max-age=0"
 
 REM watch CaddyFile
 REM start /b caddy run -watch

@@ -17,10 +17,12 @@ module GraphPage =
         maximizeSize = "maximizeSize"
     |}
     let queryForm = document.getElementById "queryForm"
-    let graph = document.getElementById "graph"
-    let graphLoader = UI.getLoader graph
+    let userNameInput = document.querySelector ("#userName") :?> Browser.Types.HTMLInputElement
 
-    let userNameFromQueryParams = Url.URLSearchParams.Create(window.location.search).get("userName")
+    let graph = document.getElementById "graph"
+    let graphLoader = WebUtils.getLoader graph
+
+    let defaultUserName = WebUtils.getUserNameFromQueryParams()
 
     let plotly : obj = window?Plotly
 
@@ -83,10 +85,10 @@ module GraphPage =
                         do! p |> Async.AwaitPromise |> Async.Ignore
                 })
 
-    match userNameFromQueryParams with
+    match defaultUserName with
     | None -> graph.hidden <- true
     | Some userName ->
-        queryForm.hidden <- true
+        userNameInput.value <- userName
         document.documentElement.className <- pageStyleClasses.maximizeHeight
         document.body.className <- pageStyleClasses.maximizeHeight
         graph.className <- pageStyleClasses.maximizeSize

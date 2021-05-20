@@ -1,9 +1,9 @@
 ﻿<!doctype html>
 <html>
 <head>
-  <title>Last.Fm stats</title>
-  <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Last.Fm stats</title>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         .maximizeHeight {
             height: 100% !important;
@@ -21,7 +21,7 @@
             line-height: 1.6em;
         }
 
-       /* #queryForm form > * {
+        /* #queryForm form > * {
             padding-bottom: px;
         }*/
     </style>
@@ -29,18 +29,16 @@
 <body>
     <div id="graph"></div>
     <div id="queryForm">
-        <form method="get" action="/">
+        <form method="get" action="">
             <h3>Options:</h3>
             <label for="userName">Last.Fm user name:</label>
             <input type="text" name="userName" id="userName" value="" />
             <br />
             <label for="color">Color:</label>
-            <select name="color" id="color">
-            </select>
+            <select name="color" id="color"></select>
             <br />
-            <label for="timezone">Timezone:</label>
-            <select name="timezone" id="timezone">
-            </select>
+            <label for="timeZone">TimeZone:</label>
+            <select name="timeZone" id="timeZone"></select>
             <br />
             Time window:
             <label for="startDate">from </label>
@@ -51,6 +49,9 @@
             <input type="submit" />
         </form>
     </div>
+    <p>
+        <a href="/">Go back to home</a>
+    </p>
     <script src="https://cdn.plot.ly/plotly-gl2d-latest.min.js" defer></script>
     <script src="Scripts/Pages/GraphPage.js" type="module"></script>
 </body>

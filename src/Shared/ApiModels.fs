@@ -1,4 +1,6 @@
-﻿module ApiModels
+﻿namespace ApiModels
+
+open Fable.Core
 
 // Types defined here are shared between the server and the client.
 // Since we currently use native js deserialization with casting on the client side (zero overhead),
@@ -20,8 +22,6 @@ type FlatScrobble = {
     Timestamp: float // int64
 }
 
-type UserName = UserName of string
-
 type GetResumeTimestampResponse = {
     ResumeFrom: float // int64
 }
@@ -34,11 +34,6 @@ type InsertScrobblesResponse = {
     NewScrobbles: int
 }
 
-type GetChartRequestOptions = {
-    PageToken: float option // int64
-    PageSize: int option
-}
-
 type GetChartDataResponse = {
     Timestamps: string[]
     Colors: string[]
@@ -48,8 +43,18 @@ type GetChartDataResponse = {
     TotalCount: int
 }
 
-type IMainApi = {
-    getResumeTimestamp: UserName -> Async<GetResumeTimestampResponse>
-    insertScrobbles: UserName -> FlatScrobble[] -> Async<Result<InsertScrobblesResponse, string>>
-    getChartData: UserName -> GetChartRequestOptions -> Async<GetChartDataResponse>
+[<StringEnum(CaseRules.None)>]
+type ColorChoice =
+    | Artist
+    | Album
+    with static member GetValues() = [| Artist; Album |]
+
+type TimeZone = {
+    Id: string
+    DisplayName: string
+}
+
+type TimeZonesResponse = {
+    TimeZones: TimeZone[]
+    Default: TimeZone
 }

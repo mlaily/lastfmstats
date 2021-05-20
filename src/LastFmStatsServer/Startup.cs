@@ -13,8 +13,10 @@ using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using static ApiModels;
+using ApiModels;
 
 namespace LastFmStatsServer
 {
@@ -32,10 +34,14 @@ namespace LastFmStatsServer
         {
             services.AddControllers(x => x
                 .Filters.Add(new HttpResponseExceptionFilter<GenericError>())
-            ).AddJsonOptions(x => x
+            ).AddJsonOptions(x =>
+            {
                 // The types are used directly on the client side so
                 // it's important to keep the names unchanged
-                .JsonSerializerOptions.PropertyNamingPolicy = null);
+                x.JsonSerializerOptions.PropertyNamingPolicy = null;
+                x.JsonSerializerOptions.Converters.Add(new FSharpUnionConverterFactory());
+                //x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
+            });
 
             services.AddSwaggerGen(x => x
                 .SwaggerDoc("v1", new OpenApiInfo { Title = "LastFmStatsServer", Version = "v1" }));

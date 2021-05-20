@@ -12,7 +12,7 @@ using Dapper;
 using System.Text;
 using System.Globalization;
 using LastFmStatsServer.Business;
-using static ApiModels;
+using ApiModels;
 using LastFmStatsServer.Plumbing;
 
 namespace LastFmStatsServer.Controllers

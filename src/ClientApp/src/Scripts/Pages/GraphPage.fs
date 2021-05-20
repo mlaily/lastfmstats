@@ -22,7 +22,35 @@ module GraphPage =
     let graph = document.getElementById "graph"
     let graphLoader = WebUtils.getLoader graph
 
+    let colorSelect = document.getElementById "color" :?> Browser.Types.HTMLSelectElement
+    let timeZoneSelect = document.getElementById "timeZone" :?> Browser.Types.HTMLSelectElement
+
     let defaultUserName = WebUtils.getUserNameFromQueryParams()
+
+    let initializeColors () =
+        promise {
+            let! allColors = getColors (ConsoleLogger.Default)
+            for color in allColors do
+                let selectOption : Browser.Types.HTMLOptionElement = downcast document.createElement "option"
+                selectOption.id <- string color
+                selectOption.text <- string color
+                colorSelect.add selectOption
+        }
+
+    let initializeTimeZones () =
+        promise {
+            let! tzResponse = getTimeZones (ConsoleLogger.Default)
+            for tz in tzResponse.TimeZones do
+                let selectOption : Browser.Types.HTMLOptionElement = downcast document.createElement "option"
+                selectOption.id <- tz.Id
+                selectOption.text <- string tz.DisplayName
+                timeZoneSelect.add selectOption
+                if tz = tzResponse.Default
+                then selectOption.selected <- true
+        }
+
+    initializeColors () |> Promise.start
+    initializeTimeZones () |> Promise.start
 
     let plotly : obj = window?Plotly
 

@@ -42,7 +42,7 @@ namespace LastFmStatsServer
                 // it's important to keep the names unchanged
                 x.JsonSerializerOptions.PropertyNamingPolicy = null;
                 x.JsonSerializerOptions.Converters.Add(new FSharpUnionConverterFactory());
-                //x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
+                x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
             });
 
             services.AddSwaggerGen(x => x

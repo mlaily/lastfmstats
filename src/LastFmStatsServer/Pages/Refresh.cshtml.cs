@@ -9,8 +9,11 @@ namespace LastFmStatsServer.Pages
 {
     public class RefreshModel : PageModel
     {
-        public void OnGet()
+        public string UserName { get; set; }
+
+        public void OnGet(string userName = null)
         {
+            UserName = userName;
         }
     }
 }

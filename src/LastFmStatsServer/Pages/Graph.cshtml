@@ -1,7 +1,6 @@
 ﻿@page
 @model LastFmStatsServer.Pages.GraphModel
-@{
-}
+@using ApiModels
 @section Styles {
     <style>
         .maximizeHeight {
@@ -35,19 +34,28 @@
     <form method="get" action="">
         <h3>Options:</h3>
         <label for="userName">Last.Fm user name:</label>
-        <input type="text" name="userName" id="userName" value="" />
+        <input type="text" name="userName" id="userName" value="@Model.UserName" />
         <br />
         <label for="color">Color:</label>
-        <select name="color" id="color"></select>
+        <select name="color" id="color">
+            <!option @(Model.Color == ColorChoice.Artist ? "selected" : "") value="artist">Artist</!option>
+            <!option @(Model.Color == ColorChoice.Album ? "selected" : "") value="album">Album</!option>
+        </select>
         <br />
         <label for="timeZone">TimeZone:</label>
-        <select name="timeZone" id="timeZone"></select>
+        <select name="timeZone" id="timeZone">
+            @foreach (var tz in Model.TimeZones)
+            {
+                var selected = tz == Model.TimeZone ? "selected" : "";
+            <!option @selected value="@tz.Id">@tz.DisplayName (@tz.Id)</!option>
+            }
+        </select>
         <br />
         Time window:
         <label for="startDate">from </label>
-        <input type="date" name="startDate" id="startDate" value="" />
+        <input type="date" name="startDate" id="startDate" value="@($"{Model.StartDate:yyyy-MM-dd}")" />
         <label for="endDate">to </label>
-        <input type="date" name="endDate" id="endDate" value="" />
+        <input type="date" name="endDate" id="endDate" value="@($"{Model.EndDate:yyyy-MM-dd}")" />
         <br />
         <input type="submit" />
     </form>

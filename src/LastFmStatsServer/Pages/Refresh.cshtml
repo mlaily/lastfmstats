@@ -1,7 +1,5 @@
 ﻿@page
 @model LastFmStatsServer.Pages.RefreshModel
-@{
-}
 @section Styles {
     <style>
         .log {
@@ -15,9 +13,9 @@
     <script src="js/fable/RefreshPage.js" type="module"></script>
 }
 <p>
-    <a href="/">Go back to home</a>
+    <a asp-page="Index">Go back to home</a>
 </p>
 <label for="userName">Last.FM user name:</label>
-<input id="userName" name="userName" type="text" value="" />
+<input id="userName" name="userName" type="text" value="@Model.UserName" />
 <button id="query-button">Start querying data...</button>
 <p id="output"></p>

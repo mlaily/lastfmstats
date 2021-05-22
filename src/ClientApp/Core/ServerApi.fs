@@ -71,25 +71,3 @@ module ServerApi =
             }
 
         loadAllScrobbleData' None
-
-    let getColors (log: ILogger) =
-        promise {
-            let! result =
-                fetchParse<ColorChoice[]>
-                    $"{apiRoot}api/colors"
-                    [ requestHeaders [ ContentType "application/json" ] ]
-                |> unwrapOrFail
-
-            return result
-        }
-
-    let getTimeZones (log: ILogger) =
-        promise {
-            let! result =
-                fetchParse<TimeZonesResponse>
-                    $"{apiRoot}api/timezones"
-                    [ requestHeaders [ ContentType "application/json" ] ]
-                |> unwrapOrFail
-
-            return result
-        }

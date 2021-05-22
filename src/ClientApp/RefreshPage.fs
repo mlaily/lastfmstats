@@ -14,11 +14,6 @@ module RefreshPage =
     let userNameInput = document.querySelector ("#userName") :?> Browser.Types.HTMLInputElement
     let outputDiv = document.querySelector ("#output") :?> Browser.Types.HTMLParagraphElement
 
-    let defaultUserName = WebUtils.getUserNameFromQueryParams()
-
-    if defaultUserName.IsSome
-    then userNameInput.value <- defaultUserName.Value
-
     let outputLogger =
         let createElement msg style =
             let element : Browser.Types.HTMLParagraphElement = downcast document.createElement "p"

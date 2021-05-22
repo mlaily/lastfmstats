@@ -45,9 +45,8 @@ type GetChartDataResponse = {
 
 [<StringEnum(CaseRules.None)>]
 type ColorChoice =
-    | Artist
-    | Album
-    with static member GetValues() = [| Artist; Album |]
+    | Artist = 0
+    | Album = 1
 
 type TimeZone = {
     Id: string

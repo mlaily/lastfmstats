@@ -1,4 +1,4 @@
-namespace LastFMStats.Client.Pages
+namespace LastFMStats.Client
 
 open LastFMStats.Client.Util
 open LastFMStats.Client.LastFmApi
@@ -7,7 +7,6 @@ open Browser.Dom
 open FSharp.Control
 open Fable.Core
 open Browser
-open LastFMStats.Client
 
 module RefreshPage =
 

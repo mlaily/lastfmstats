@@ -32,6 +32,8 @@ namespace LastFmStatsServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddRazorPages();
+
             services.AddControllers(x => x
                 .Filters.Add(new HttpResponseExceptionFilter<GenericError>())
             ).AddJsonOptions(x =>
@@ -64,6 +66,8 @@ namespace LastFmStatsServer
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "LastFmStatsServer v1"));
             }
 
+            app.UseStaticFiles();
+
             app.UseRouting();
 
             app.UseCors(x => x.AllowAnyOrigin().AllowAnyHeader().WithMethods("GET", "POST", "OPTIONS"));
@@ -73,6 +77,7 @@ namespace LastFmStatsServer
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapRazorPages();
             });
 
             // Make SQLite support DateTimeOffset

@@ -1,0 +1,23 @@
+﻿@page
+@model LastFmStatsServer.Pages.RefreshModel
+@{
+}
+@section Styles {
+    <style>
+        .log {
+            margin: 2px;
+            font-family: Courier, Courier New, sans-serif;
+            font-size: .8em;
+        }
+    </style>
+}
+@section Scripts {
+    <script src="js/fable/RefreshPage.js" type="module"></script>
+}
+<p>
+    <a href="/">Go back to home</a>
+</p>
+<label for="userName">Last.FM user name:</label>
+<input id="userName" name="userName" type="text" value="" />
+<button id="query-button">Start querying data...</button>
+<p id="output"></p>

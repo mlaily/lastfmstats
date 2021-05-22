@@ -1,4 +1,4 @@
-namespace LastFMStats.Client.Pages
+namespace LastFMStats.Client
 
 open LastFMStats.Client.Util
 open LastFMStats.Client.ServerApi
@@ -7,7 +7,6 @@ open FSharp.Control
 open Browser.Dom
 open Fable.Core
 open Browser
-open LastFMStats.Client
 
 module GraphPage =
 

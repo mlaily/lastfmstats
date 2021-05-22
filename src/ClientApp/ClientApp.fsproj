@@ -5,18 +5,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
-  <ItemGroup />
   <ItemGroup>
-    <Compile Include="Scripts\Util.fs" />
-    <Compile Include="Scripts\LastFmApiTypes.fs" />
-    <Compile Include="Scripts\LastFmApi.fs" />
-    <Compile Include="Scripts\ServerApi.fs" />
-    <Compile Include="Scripts\WebUtils.fs" />
-    <Compile Include="Scripts\Pages\RefreshPage.fs" />
-    <Compile Include="Scripts\Pages\GraphPage.fs" />
-    <None Include="refresh.html" />
-    <None Include="graph.html" />
-    <None Include="index.html" />
+    <Compile Include="Core\Util.fs" />
+    <Compile Include="Core\LastFmApiTypes.fs" />
+    <Compile Include="Core\LastFmApi.fs" />
+    <Compile Include="Core\ServerApi.fs" />
+    <Compile Include="Core\WebUtils.fs" />
+    <Compile Include="RefreshPage.fs" />
+    <Compile Include="GraphPage.fs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Fable.Browser.Dom" Version="2.2.0" />
@@ -28,7 +24,7 @@
     <PackageReference Include="Thoth.Json" Version="5.1.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Shared\Shared.fsproj" />
+    <ProjectReference Include="..\Shared\Shared.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="5.0.1" />

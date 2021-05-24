@@ -59,5 +59,17 @@ namespace LastFmStatsServer.Business
             var index = unchecked((int)(hash % (uint)values.Count));
             return values[index];
         }
+
+        public static TimeZoneInfo GetTimeZoneOrUTC(string timeZoneId)
+        {
+            try
+            {
+                return TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+            catch (Exception)
+            {
+                return TimeZoneInfo.Utc;
+            }
+        }
     }
 }

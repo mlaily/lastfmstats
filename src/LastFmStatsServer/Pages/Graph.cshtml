@@ -38,15 +38,16 @@
         <br />
         <label for="color">Color:</label>
         <select name="color" id="color">
-            <!option @(Model.Color == ColorChoice.Artist ? "selected" : "") value="artist">Artist</!option>
-            <!option @(Model.Color == ColorChoice.Album ? "selected" : "") value="album">Album</!option>
+            <!option @(Model.Color == ColorChoice.None ? "selected" : "") value="@ColorChoice.None">No color</!option>
+            <!option @(Model.Color == ColorChoice.Artist ? "selected" : "") value="@ColorChoice.Artist">Artist</!option>
+            <!option @(Model.Color == ColorChoice.Album ? "selected" : "") value="@ColorChoice.Album">Album</!option>
         </select>
         <br />
         <label for="timeZone">TimeZone:</label>
         <select name="timeZone" id="timeZone">
             @foreach (var tz in Model.TimeZones)
             {
-                var selected = tz == Model.TimeZone ? "selected" : "";
+                var selected = tz.Id == Model.TimeZone.Id ? "selected" : "";
             <!option @selected value="@tz.Id">@tz.DisplayName (@tz.Id)</!option>
             }
         </select>

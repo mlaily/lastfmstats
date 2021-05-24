@@ -47,7 +47,14 @@ module ServerApi =
             return result.ResumeFrom
         }
 
-    let loadAllScrobbleData (log: ILogger) userName =
+    type GraphRawQueryParams =
+        { userName : string
+          color : string option
+          timeZone : string option
+          startDate : string option
+          endDate : string option }
+
+    let loadAllScrobbleData (log: ILogger) graphQueryParams =
         let fetchWithRetry (nextPageToken: float option) =
             let fetchPage () =
                 let nextPageTokenQueryParam =
@@ -55,7 +62,17 @@ module ServerApi =
                     | None -> ""
                     | Some value -> $"nextPageToken={value}"
 
-                fetchParse<GetChartDataResponse> $"{apiRoot}api/scrobbles/%s{userName}?{nextPageTokenQueryParam}" []
+                let queryParams =
+                    [ "nextPageToken", (nextPageToken |> Option.map string)
+                      "userName", (Some graphQueryParams.userName)
+                      "color", (graphQueryParams.color)
+                      "timeZone", (graphQueryParams.timeZone)
+                      "startDate", (graphQueryParams.startDate)
+                      "endDate", (graphQueryParams.endDate) ]
+                    |> List.choose (fun (k, v) -> v |> Option.map (fun v -> $"{k}={v}"))
+                    |> (String.join "&")
+
+                fetchParse<GetChartDataResponse> $"{apiRoot}api/scrobbles/%s{graphQueryParams.userName}?{queryParams}" []
                 |> unwrapOrFail
 
             retryPromise 10 (fun ex -> log.LogAlways $"An error occured: {ex.Message}\nRetrying...") fetchPage

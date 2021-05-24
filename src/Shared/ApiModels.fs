@@ -47,13 +47,4 @@ type GetChartDataResponse = {
 type ColorChoice =
     | Artist = 0
     | Album = 1
-
-type TimeZone = {
-    Id: string
-    DisplayName: string
-}
-
-type TimeZonesResponse = {
-    TimeZones: TimeZone[]
-    Default: TimeZone
-}
+    | None = 2

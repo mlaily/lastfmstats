@@ -16,6 +16,10 @@ module Util =
         let tap f computation =
             computation |> map (fun x -> f x; x)
 
+    module String =
+        let join (separator : string) (values : IEnumerable<'a>) =
+            String.Join(separator, values)
+
     type ILogger =
         abstract member LogAlways : msg:string -> unit
         abstract member LogDebug : msg:string -> unit

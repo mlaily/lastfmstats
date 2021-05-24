@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using ApiModels;
+using LastFmStatsServer.Business;
 using LastFmStatsServer.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -21,7 +22,7 @@ namespace LastFmStatsServer.Pages
 
         public void OnGet(
             string userName = null,
-            ColorChoice color = ColorChoice.Artist,
+            ColorChoice color = default,
             string timeZone = null,
             DateTimeOffset? startDate = null,
             DateTimeOffset? endDate = null)
@@ -29,7 +30,7 @@ namespace LastFmStatsServer.Pages
             UserName = userName?.Trim();
             Color = color;
             TimeZones = TimeZoneInfo.GetSystemTimeZones();
-            TimeZone = TimeZones.FirstOrDefault(x => x.Id == timeZone) ?? TimeZones.First(x => x.Id == "UTC");
+            TimeZone = Utils.GetTimeZoneOrUTC(timeZone);
             StartDate = startDate;
             EndDate = endDate;
         }

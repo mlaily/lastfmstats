@@ -119,15 +119,15 @@ namespace LastFmStatsServer.Controllers
             }
         }
 
-        private enum ColorChoice
-        {
-            None,
-            Album,
-            Artist,
-        }
-
         [HttpGet("{userName}")]
-        public GetChartDataResponse Get(string userName, [FromQuery] long? nextPageToken = null, [FromQuery] int? pageSize = null)
+        public GetChartDataResponse Get(
+            string userName,
+            [FromQuery] long? nextPageToken = null,
+            [FromQuery] int? pageSize = null,
+            [FromQuery] ColorChoice color = default,
+            [FromQuery] string timeZone = null,
+            [FromQuery] DateTimeOffset? startDate = null,
+            [FromQuery] DateTimeOffset? endDate = null)
         {
             if (nextPageToken == null)
                 // nextPageToken is actually the timestamp limit in the query
@@ -139,28 +139,29 @@ namespace LastFmStatsServer.Controllers
 
             var normalizedUserName = Utils.NormalizeUserName(userName);
 
-            var scrobbles = (from scrobble in _mainContext.Scrobbles
-                             where scrobble.User.Name == normalizedUserName
-                             where scrobble.Timestamp < nextPageToken
-                             orderby scrobble.Timestamp descending
-                             select new FlatScrobble(
-                                 scrobble.Track.Artist.Name,
-                                 scrobble.Track.Album.Name,
-                                 scrobble.Track.Name,
-                                 scrobble.Timestamp))
-                            .Take(pageSize.Value)
-                            .AsNoTracking();
+            var actualStartDate = startDate?.ToUnixTimeSeconds() ?? 0;
+            var actualEndDate = endDate?.ToUnixTimeSeconds() ?? long.MaxValue;
+            var scrobblesQueryBase = from scrobble in _mainContext.Scrobbles
+                                     where scrobble.User.Name == normalizedUserName
+                                     where scrobble.Timestamp >= actualStartDate
+                                     where scrobble.Timestamp <= actualEndDate
+                                     where scrobble.Timestamp < nextPageToken
+                                     orderby scrobble.Timestamp descending
+                                     select new FlatScrobble(
+                                         scrobble.Track.Artist.Name,
+                                         scrobble.Track.Album.Name,
+                                         scrobble.Track.Name,
+                                         scrobble.Timestamp);
 
-            var totalCount = _mainContext.Scrobbles.Count(x => x.User.Name == normalizedUserName);
+            var scrobbles = scrobblesQueryBase.Take(pageSize.Value).AsNoTracking();
 
-            var time = new List<string>();
-            var color = new List<string>();
-            var displayValue = new List<string>();
+            var totalCount = scrobblesQueryBase.Count();
 
-            //var colorChoice = ColorChoice.Artist;
+            var timestamps = new List<string>();
+            var colors = new List<string>();
+            var texts = new List<string>();
 
-            var timeZone = TimeZoneInfo.Local.Id;
-            var targetTimeZone = string.IsNullOrWhiteSpace(timeZone) ? TimeZoneInfo.Utc : TimeZoneInfo.FindSystemTimeZoneById(timeZone);
+            var targetTimeZone = Utils.GetTimeZoneOrUTC(timeZone);
 
             var oldestTimestamp = double.MaxValue;
             foreach (var scrobble in scrobbles)
@@ -168,26 +169,23 @@ namespace LastFmStatsServer.Controllers
                 if (scrobble.Timestamp < oldestTimestamp)
                     oldestTimestamp = scrobble.Timestamp;
 
-                time.Add(ConvertAndFormat((long)scrobble.Timestamp));
+                timestamps.Add(ConvertAndFormat((long)scrobble.Timestamp));
 
-                //var tweakedUtcTimestamp = new DateTimeOffset(utcTimePlayed.DateTime, TimeSpan.Zero).ToUnixTimeMilliseconds();
-                //time.Add(tweakedUtcTimestamp);
-
-                //var displayColor = colorChoice switch
-                //{
-                //    ColorChoice.None => "#400d73",
-                //    ColorChoice.Album => GetColorForValue(scrobble.Album),
-                //    ColorChoice.Artist => GetColorForValue(scrobble.Artist),
-                //    _ => throw new NotSupportedException(),
-                //};
-                color.Add(Utils.MapToArrayValue(scrobble.Artist, Utils.Colors));
-                displayValue.Add($"{scrobble.Artist} - {scrobble.Track}{(string.IsNullOrWhiteSpace(scrobble.Album) ? "" : " (" + scrobble.Album + ")")}");
+                var displayColor = color switch
+                {
+                    ColorChoice.None => "#400d73",
+                    ColorChoice.Artist => Utils.MapToArrayValue(scrobble.Artist, Utils.Colors),
+                    ColorChoice.Album => Utils.MapToArrayValue(scrobble.Album, Utils.Colors),
+                    _ => throw new NotSupportedException(),
+                };
+                colors.Add(displayColor);
+                texts.Add($"{scrobble.Artist} - {scrobble.Track}{(string.IsNullOrWhiteSpace(scrobble.Album) ? "" : " (" + scrobble.Album + ")")}");
             }
 
             return new GetChartDataResponse(
-                timestamps: time.ToArray(),
-                colors: color.ToArray(),
-                texts: displayValue.ToArray(),
+                timestamps: timestamps.ToArray(),
+                colors: colors.ToArray(),
+                texts: texts.ToArray(),
                 nextPageToken: oldestTimestamp,
                 totalCount: totalCount);
 

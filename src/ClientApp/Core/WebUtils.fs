@@ -24,4 +24,4 @@ module WebUtils =
             JS.clearInterval(timerToken)
             target.removeChild loader |> ignore |}
 
-    let getUserNameFromQueryParams () = Url.URLSearchParams.Create(window.location.search).get("userName")
+    let getQueryParam paramName = Url.URLSearchParams.Create(window.location.search).get(paramName)

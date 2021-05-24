@@ -7,6 +7,8 @@ open FSharp.Control
 open Browser.Dom
 open Fable.Core
 open Browser
+open ApiModels
+open System
 
 module GraphPage =
 
@@ -15,18 +17,25 @@ module GraphPage =
         maximizeHeight = "maximizeHeight"
         maximizeSize = "maximizeSize"
     |}
-    let queryForm = document.getElementById "queryForm"
-    let userNameInput = document.querySelector ("#userName") :?> Browser.Types.HTMLInputElement
 
     let graph = document.getElementById "graph"
-    let graphLoader = WebUtils.getLoader graph
-
-    let defaultUserName = WebUtils.getUserNameFromQueryParams()
+    let graphLoader = WebUtils.getLoader graph 
 
     let plotly : obj = window?Plotly
 
-    let generateGraph graph userName =
-        loadAllScrobbleData (ConsoleLogger.Default) userName
+    let parseQueryParams () : GraphRawQueryParams option =
+        match WebUtils.getQueryParam "userName" with
+        | None -> None
+        | Some userName ->
+            // No validation for now...
+            Some { userName = userName
+                   color = WebUtils.getQueryParam "color"
+                   timeZone = WebUtils.getQueryParam "timeZone"
+                   startDate = WebUtils.getQueryParam "startDate"
+                   endDate = WebUtils.getQueryParam "endDate" }
+
+    let generateGraph graph graphQueryParams =
+        loadAllScrobbleData (ConsoleLogger.Default) graphQueryParams
         |> AsyncSeq.indexed
         |> AsyncSeq.iterAsync
             (fun (pageIndex, pageData) ->
@@ -50,7 +59,7 @@ module GraphPage =
                                   hovertemplate = "%{x|%a %Y-%m-%d %H:%M:%S}<br>%{text}<extra></extra>" |} |]
 
                         let layout =
-                            {| title = $"{userName} - {pageData.TotalCount} scrobbles"
+                            {| title = $"{graphQueryParams.userName} - {pageData.TotalCount} scrobbles"
                                hovermode = "closest"
                                xaxis =
                                    {| showgrid = false
@@ -84,14 +93,13 @@ module GraphPage =
                         do! p |> Async.AwaitPromise |> Async.Ignore
                 })
 
-    match defaultUserName with
+    match parseQueryParams() with
     | None -> graph.hidden <- true
-    | Some userName ->
-        userNameInput.value <- userName
+    | Some graphQueryParams ->
         document.documentElement.className <- pageStyleClasses.maximizeHeight
         document.body.className <- pageStyleClasses.maximizeHeight
         graph.className <- pageStyleClasses.maximizeSize
         graphLoader.enable()
-        generateGraph graph userName
+        generateGraph graph graphQueryParams
         |> Async.tap (fun _ -> graphLoader.disable())
         |> Async.StartImmediate

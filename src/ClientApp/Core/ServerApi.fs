@@ -42,7 +42,7 @@ module ServerApi =
                     [ requestHeaders [ ContentType "application/json" ] ]
                 |> unwrapOrFail
 
-            log.LogDebug $"Resuming fetching from timestamp {result.ResumeFrom} ({DateTimeOffset.FromUnixTimeSeconds(int64 result.ResumeFrom)})"
+            log.LogDebug $"Resuming fetch from timestamp {result.ResumeFrom} ({DateTimeOffset.FromUnixTimeSeconds(int64 result.ResumeFrom)})"
 
             return result.ResumeFrom
         }

@@ -7,6 +7,7 @@ open Browser.Dom
 open FSharp.Control
 open Fable.Core
 open Browser
+open Browser.Types
 
 module RefreshPage =
 
@@ -14,17 +15,20 @@ module RefreshPage =
     let userNameInput = document.querySelector ("#userName") :?> Browser.Types.HTMLInputElement
     let outputDiv = document.querySelector ("#output") :?> Browser.Types.HTMLParagraphElement
 
+    let logRawHtml html = outputDiv.appendChild html |> ignore
+    let initializeLogNode (element: HTMLElement) style =
+        element.classList.add "log"
+        element.setAttribute("style", style)
+        element
+    let createLogNode msg style =
+        let element : Browser.Types.HTMLParagraphElement = downcast document.createElement "p"
+        element.innerText <- msg
+        initializeLogNode element style
     let outputLogger =
-        let createElement msg style =
-            let element : Browser.Types.HTMLParagraphElement = downcast document.createElement "p"
-            element.innerText <- msg
-            element.className <- "log"
-            element.setAttribute("style", style)
-            element
         { new ILogger with
-            member this.LogAlways msg = outputDiv.appendChild (createElement msg "color: black") |> ignore
-            member this.LogWarning msg = outputDiv.appendChild (createElement msg "color: orangered") |> ignore
-            member this.LogDebug msg = outputDiv.appendChild (createElement msg "color: gray") |> ignore }
+            member this.LogAlways msg = logRawHtml (createLogNode msg "color: black")
+            member this.LogWarning msg = logRawHtml (createLogNode msg "color: orangered")
+            member this.LogDebug msg = logRawHtml (createLogNode msg "color: gray") }
 
     userNameInput.onkeyup <-
         fun e ->
@@ -36,7 +40,6 @@ module RefreshPage =
         fun _ ->
             queryButton.disabled <- true
             let userName = userNameInput.value
-
             promise {
                 let! from = getResumeTimestamp outputLogger userName
                 let! data = fetchAllTracks outputLogger userName (int64 from)
@@ -50,12 +53,15 @@ module RefreshPage =
                             |> postScrobbles outputLogger userName
                             |> Async.AwaitPromise
                             |> Async.Ignore)
-                    |> Async.StartAsPromise
-            }
+                    |> Async.StartAsPromise }
             |> Promise.catch (fun x ->
                 outputLogger.LogWarning $"Aborted! - {x.Message}"
                 queryButton.disabled <- false)
             |> Promise.tap (fun _ ->
                 outputLogger.LogAlways "The End."
+                let graphLink : Browser.Types.HTMLAnchorElement = downcast document.createElement "a"
+                graphLink.text <- $"Go to {userName} graph page"
+                graphLink.href <- $"Graph?userName={userName}"
+                logRawHtml (initializeLogNode graphLink "")
                 queryButton.disabled <- false)
             |> Promise.start

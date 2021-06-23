@@ -34,6 +34,11 @@ module Util =
 
     type FetchResponse = { Response: Response; Body: obj }
 
+    type RetryError = 
+        { Exception: Exception
+          NextTryNumber: int
+          MaxRetries: int}
+
     let retryPromise maxRetries beforeRetry f =
         let rec loop retriesRemaining =
             promise {
@@ -41,10 +46,10 @@ module Util =
                     return! f ()
                 with ex ->
                     if retriesRemaining > 0 then
-                        beforeRetry ex
+                        beforeRetry { Exception = ex; NextTryNumber = maxRetries - retriesRemaining + 1; MaxRetries = maxRetries }
                         return! loop (retriesRemaining - 1)
                     else
-                        return raise (Exception($"Still failing after {maxRetries} retries.", ex))
+                        return raise (Exception($"Still failing after {maxRetries} retries. ({ex.Message})", ex))
             }
 
         loop maxRetries

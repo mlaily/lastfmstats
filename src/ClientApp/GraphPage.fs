@@ -96,6 +96,7 @@ module GraphPage =
     match parseQueryParams() with
     | None -> graph.hidden <- true
     | Some graphQueryParams ->
+        document.title <- $"{graphQueryParams.userName}'s graph"
         document.documentElement.className <- pageStyleClasses.maximizeHeight
         document.body.className <- pageStyleClasses.maximizeHeight
         graph.className <- pageStyleClasses.maximizeSize

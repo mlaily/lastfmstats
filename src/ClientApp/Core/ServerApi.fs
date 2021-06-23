@@ -75,7 +75,7 @@ module ServerApi =
                 fetchParse<GetChartDataResponse> $"{apiRoot}api/scrobbles/%s{graphQueryParams.userName}?{queryParams}" []
                 |> unwrapOrFail
 
-            retryPromise 10 (fun ex -> log.LogAlways $"An error occured: {ex.Message}\nRetrying...") fetchPage
+            retryPromise 10 (fun err -> log.LogAlways $"An error occured: {err.Exception.Message}\nRetrying... ({err.NextTryNumber}/{err.MaxRetries})") fetchPage
 
         let mutable currentCount = 0
         let rec loadAllScrobbleData' nextPageToken =

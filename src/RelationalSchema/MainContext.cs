@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -106,6 +106,26 @@ namespace LastFmStatsServer
         }
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+
+            if (!optionsBuilder.IsConfigured)
+            {
+                var warning = $@"!!!!!!!!!!
+{nameof(MainContext)} is not configured.
+If you are attempting a migration from the dotnet ef tool and you get an error, manually specify the connection string, e.g.:
+dotnet ef database update --connection ""Data Source=My.db""
+!!!!!!!!!!";
+#if DEBUG
+                Console.WriteLine(warning);
+                optionsBuilder.UseSqlite();
+#else
+                throw new InvalidOperationException(warning);
+#endif
+            }
+        }
 
         public string GetColumnName(IEntityType entityType, string targetPropertyName)
             => entityType.FindProperty(targetPropertyName).GetColumnName(StoreObjectIdentifier.Table(entityType.GetTableName(), entityType.GetSchema()));

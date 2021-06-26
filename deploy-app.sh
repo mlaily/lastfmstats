@@ -2,7 +2,7 @@
 
 . "scripts/set-env.sh"
 
-echo -e "Don't forget to build the client app in release mode first!!!"
+echo -e "Don't forget to build the client app in release mode first (./build.sh)!!!"
 
 read -p "Please enter a tag value: " TAG
 ${TAG:?} 2> /dev/null # exit if null or not set

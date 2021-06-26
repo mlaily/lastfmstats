@@ -47,6 +47,25 @@ module ServerApi =
             return result.ResumeFrom
         }
 
+    let getUserDisplayName (log: ILogger) userName =
+        promise {
+            log.LogDebug "Querying user name..."
+            let! result =
+                fetchParse<GetUserNameResponse>
+                    $"{apiRoot}api/scrobbles/{userName}/display-name"
+                    [ requestHeaders [ ContentType "application/json" ] ]
+                |> Promise.map
+                    (function
+                    | Ok ok -> Some ok.DisplayName
+                    | Error error ->
+                        match error.Response.Status with
+                        | 404 ->
+                            log.LogDebug $"User {userName} not found ({JS.JSON.stringify error.Body})"
+                            None
+                        | _ -> failwith $"Error while querying user name: {error.Response.StatusText} ({error.Response.Status}) - {JS.JSON.stringify error.Body}")
+            return result
+        }
+
     type GraphRawQueryParams =
         { userName : string
           color : string option

@@ -16,6 +16,7 @@ module GraphPage =
     let pageStyleClasses = {|
         maximizeHeight = "maximizeHeight"
         maximizeSize = "maximizeSize"
+        error = "error"
     |}
 
     let graph = document.getElementById "graph"
@@ -23,16 +24,22 @@ module GraphPage =
 
     let plotly : obj = window?Plotly
 
-    let parseQueryParams () : GraphRawQueryParams option =
-        match WebUtils.getQueryParam "userName" with
-        | None -> None
-        | Some userName ->
-            // No validation for now...
-            Some { userName = userName
-                   color = WebUtils.getQueryParam "color"
-                   timeZone = WebUtils.getQueryParam "timeZone"
-                   startDate = WebUtils.getQueryParam "startDate"
-                   endDate = WebUtils.getQueryParam "endDate" }
+    let parseQueryParams () : JS.Promise<Result<GraphRawQueryParams, string> option> =
+        promise {
+            match WebUtils.getQueryParam "userName" with
+            | None -> return None
+            | Some userName ->
+                let! userDisplayName = ServerApi.getUserDisplayName (ConsoleLogger.Default) userName
+                match userDisplayName with
+                | None -> return Some (Error $"User '{userName}' not found!") // user not found
+                | Some userDisplayName -> 
+                    // Not much validation for now...
+                    return Some (Ok { userName = userDisplayName
+                                      color = WebUtils.getQueryParam "color"
+                                      timeZone = WebUtils.getQueryParam "timeZone"
+                                      startDate = WebUtils.getQueryParam "startDate"
+                                      endDate = WebUtils.getQueryParam "endDate" })
+        }
 
     let generateGraph graph graphQueryParams =
         loadAllScrobbleData (ConsoleLogger.Default) graphQueryParams
@@ -93,14 +100,20 @@ module GraphPage =
                         do! p |> Async.AwaitPromise |> Async.Ignore
                 })
 
-    match parseQueryParams() with
-    | None -> graph.hidden <- true
-    | Some graphQueryParams ->
-        document.title <- $"{graphQueryParams.userName}'s graph"
-        document.documentElement.className <- pageStyleClasses.maximizeHeight
-        document.body.className <- pageStyleClasses.maximizeHeight
-        graph.className <- pageStyleClasses.maximizeSize
-        graphLoader.enable()
-        generateGraph graph graphQueryParams
-        |> Async.tap (fun _ -> graphLoader.disable())
-        |> Async.StartImmediate
+    promise {
+        match! parseQueryParams() with
+        | None ->
+            graph.hidden <- true
+        | Some (Error msg) ->
+            graph.innerText <- $"Error. {msg}"
+            graph.className <- pageStyleClasses.error
+        | Some (Ok graphQueryParams) ->
+            document.title <- $"{graphQueryParams.userName}'s graph"
+            document.documentElement.className <- pageStyleClasses.maximizeHeight
+            document.body.className <- pageStyleClasses.maximizeHeight
+            graph.className <- pageStyleClasses.maximizeSize
+            graphLoader.enable()
+            do! generateGraph graph graphQueryParams
+                |> Async.StartAsPromise
+                |> Promise.tap (fun _ -> graphLoader.disable())
+    } |> Async.AwaitPromise |> Async.StartImmediate

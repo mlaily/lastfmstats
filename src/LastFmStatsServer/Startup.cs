@@ -112,7 +112,7 @@ namespace LastFmStatsServer
 
             try
             {
-                mainDbContext.Database.EnsureCreated();
+                mainDbContext.Database.Migrate();
                 // DbInitializer.Initialize(context);
             }
             catch (Exception ex)

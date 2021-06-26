@@ -26,6 +26,10 @@ type GetResumeTimestampResponse = {
     ResumeFrom: float // int64
 }
 
+type GetUserNameResponse = {
+    DisplayName: string
+}
+
 type InsertScrobblesResponse = {
     NewUsers: int
     NewArtists: int

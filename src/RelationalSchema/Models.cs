@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace LastFmStatsServer
@@ -16,6 +16,7 @@ namespace LastFmStatsServer
             Scrobbles = new HashSet<Scrobble>();
         }
 
+        public string DisplayName { get; set; }
         public virtual ICollection<Scrobble> Scrobbles { get; set; }
     }
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -47,6 +47,24 @@ namespace LastFmStatsServer.Controllers
             return new GetResumeTimestampResponse(resumeFrom: (long)fromValue);
         }
 
+        [HttpGet("{userName}/display-name")]
+        public GetUserNameResponse GetDisplayName(string userName)
+        {
+            var user = _mainContext.Users.SingleOrDefault(x => x.Name == Utils.NormalizeUserName(userName));
+            if (user == null)
+            {
+                throw new HttpResponseException<GenericError>
+                {
+                    Status = (int)HttpStatusCode.NotFound,
+                    Value = new GenericError("User not found."),
+                };
+            }
+            else
+            {
+                return new GetUserNameResponse(displayName: user.DisplayName);
+            }
+        }
+
         [HttpPost("{userName}")]
         public InsertScrobblesResponse Post(string userName, FlatScrobble[] scrobbleData)
         {
@@ -73,14 +91,26 @@ namespace LastFmStatsServer.Controllers
                                 select refined)
                                .ToList();
 
+            var originalUserName = Utils.NormalizeEmpty(userName);
             var normalizedUserName = Utils.NormalizeUserName(userName);
 
             using (var transaction = _mainContext.Database.BeginTransaction())
             {
                 try
                 {
-                    var newUserCount = _mainContext.InsertOrIgnore(_mainContext.Users.EntityType, nameof(LastFmStatsServer.User.Name), new[] { normalizedUserName });
+                    // Use the normalized name (lower case) to ensure unique user names, but use the original value as the display name to have the correct casing.
+                    var newUserCount = _mainContext.InsertOrIgnore(
+                        _mainContext.Users.EntityType,
+                        (nameof(LastFmStatsServer.User.Name), nameof(LastFmStatsServer.User.DisplayName)),
+                        new[] { (normalizedUserName, originalUserName) });
                     var user = _mainContext.Users.FirstOrDefault(x => x.Name == normalizedUserName);
+
+                    if (user.DisplayName != originalUserName)
+                    {
+                        user.DisplayName = originalUserName;
+                        _mainContext.Users.Update(user);
+                        _mainContext.SaveChanges();
+                    }
 
                     var uniqueArtistNames = filteredData.Select(x => x.Artist).Distinct();
                     var newArtistNameCount = _mainContext.InsertOrIgnore(_mainContext.Artists.EntityType, nameof(Artist.Name), uniqueArtistNames);

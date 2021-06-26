@@ -100,6 +100,7 @@ namespace LastFmStatsServer
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.DisplayName).IsRequired();
             });
 
             OnModelCreatingPartial(modelBuilder);

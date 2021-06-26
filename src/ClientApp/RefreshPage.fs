@@ -39,15 +39,15 @@ module RefreshPage =
     queryButton.onclick <-
         fun _ ->
             queryButton.disabled <- true
-            let userName = userNameInput.value
+            let mutable userName = userNameInput.value
             promise {
                 let! from = getResumeTimestamp outputLogger userName
                 let! data = fetchAllTracks outputLogger userName (int64 from)
-
                 do!
                     data
                     |> AsyncSeq.iterAsync
-                        (fun tracks ->
+                        (fun (userDisplayName, tracks) ->
+                            userName <- userDisplayName // use the correct display name when we have it (with the proper casing)
                             tracks
                             |> Array.map mapTrackToScrobbleData
                             |> postScrobbles outputLogger userName

@@ -42,7 +42,8 @@ module LastFmApi =
 
                 log.LogAlways $"Page {currentPage} - {refinedData.Length} tracks."
 
-                yield refinedData
+                let userDisplayName = data.recenttracks.``@attr``.user
+                yield userDisplayName, refinedData
 
                 if currentPage > 1 then
                     yield! loop (page - 1) // Recurse from oldest page (totalPages) to first page (1)

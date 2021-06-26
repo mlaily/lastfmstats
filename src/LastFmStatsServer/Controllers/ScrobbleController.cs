@@ -108,7 +108,6 @@ namespace LastFmStatsServer.Controllers
                     if (user.DisplayName != originalUserName)
                     {
                         user.DisplayName = originalUserName;
-                        _mainContext.Users.Update(user);
                         _mainContext.SaveChanges();
                     }
 

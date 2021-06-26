@@ -1,4 +1,4 @@
-namespace LastFMStats.Client
+namespace LastFmStats.Client
 
 open System
 open Browser.Dom

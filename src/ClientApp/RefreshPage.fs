@@ -1,8 +1,8 @@
-namespace LastFMStats.Client
+namespace LastFmStats.Client
 
-open LastFMStats.Client.Util
-open LastFMStats.Client.LastFmApi
-open LastFMStats.Client.ServerApi
+open LastFmStats.Client.Util
+open LastFmStats.Client.LastFmApi
+open LastFmStats.Client.ServerApi
 open Browser.Dom
 open FSharp.Control
 open Fable.Core

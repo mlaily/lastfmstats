@@ -1,7 +1,7 @@
-namespace LastFMStats.Client
+namespace LastFmStats.Client
 
-open LastFMStats.Client.Util
-open LastFMStats.Client.LastFmApi
+open LastFmStats.Client.Util
+open LastFmStats.Client.LastFmApi
 open ApiModels
 open Thoth.Json
 open Fetch.Types

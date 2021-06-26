@@ -1,7 +1,7 @@
-﻿namespace LastFMStats.Client
+﻿namespace LastFmStats.Client
 
-open LastFMStats.Client.Util
-open LastFMStats.Client.LastFmApiTypes
+open LastFmStats.Client.Util
+open LastFmStats.Client.LastFmApiTypes
 open ApiModels
 open FSharp.Control
 open Fable.Core

@@ -1,4 +1,4 @@
-﻿namespace LastFMStats.Client
+﻿namespace LastFmStats.Client
 
 open Browser
 open Fable.Core

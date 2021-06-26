@@ -2,6 +2,22 @@
 @model LastFmStatsServer.Pages.RefreshModel
 @section Styles {
     <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            margin-top: 0;
+            margin-bottom: 0;
+            height: 100vh;
+        }
+
+        #header {
+        }
+
+        #output {
+            overflow-x: auto;
+            flex: 1;
+        }
+
         .log {
             margin: 2px;
             font-family: Courier, Courier New, sans-serif;
@@ -12,10 +28,12 @@
 @section Scripts {
     <script src="js/fable/RefreshPage.js" type="module"></script>
 }
-<p>
-    <a asp-page="Index">Go back to index.</a>
-</p>
-<label for="userName">Last.fm user name:</label>
-<input id="userName" name="userName" type="text" value="@Model.UserName" />
-<button id="query-button">Start querying data...</button>
+<div id="header">
+    <p>
+        <a asp-page="Index">Go back to index</a>
+    </p>
+    <label for="userName">Last.fm user name:</label>
+    <input id="userName" name="userName" type="text" value="@Model.UserName" />
+    <button id="query-button">Start fetching data...</button>
+</div>
 <p id="output"></p>

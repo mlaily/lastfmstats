@@ -30,6 +30,8 @@ module RefreshPage =
             member this.LogWarning msg = logRawHtml (createLogNode msg "color: orangered")
             member this.LogDebug msg = logRawHtml (createLogNode msg "color: gray") }
 
+    userNameInput.focus()
+
     userNameInput.onkeyup <-
         fun e ->
             if e.key = "Enter" then
@@ -40,6 +42,7 @@ module RefreshPage =
         fun _ ->
             queryButton.disabled <- true
             let mutable userName = userNameInput.value
+            outputDiv.innerHTML <- ""
             promise {
                 let! from = getResumeTimestamp outputLogger userName
                 let! data = fetchAllTracks outputLogger userName (int64 from)
@@ -60,7 +63,7 @@ module RefreshPage =
             |> Promise.tap (fun _ ->
                 outputLogger.LogAlways "The End."
                 let graphLink : Browser.Types.HTMLAnchorElement = downcast document.createElement "a"
-                graphLink.text <- $"Go to {userName} graph page"
+                graphLink.text <- $"Go to {userName}'s graph page"
                 graphLink.href <- $"Graph?userName={userName}"
                 logRawHtml (initializeLogNode graphLink "")
                 queryButton.disabled <- false)

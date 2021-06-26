@@ -22,6 +22,8 @@ module GraphPage =
     let graph = document.getElementById "graph"
     let graphLoader = WebUtils.getLoader graph 
 
+    let userNameInput = document.querySelector ("#userName") :?> Browser.Types.HTMLInputElement
+
     let plotly : obj = window?Plotly
 
     let parseQueryParams () : JS.Promise<Result<GraphRawQueryParams, string> option> =
@@ -104,9 +106,11 @@ module GraphPage =
         match! parseQueryParams() with
         | None ->
             graph.hidden <- true
+            userNameInput.focus()
         | Some (Error msg) ->
             graph.innerText <- $"Error. {msg}"
             graph.className <- pageStyleClasses.error
+            userNameInput.focus()
         | Some (Ok graphQueryParams) ->
             document.title <- $"{graphQueryParams.userName}'s graph"
             document.documentElement.className <- pageStyleClasses.maximizeHeight

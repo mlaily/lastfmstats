@@ -24,8 +24,19 @@
             line-height: 1.6em;
         }
 
-        /* #queryForm form > * {
-            padding-bottom: px;
+        #queryForm form {
+            display: grid;
+            grid-template-columns: max-content max-content;
+            grid-gap: 8px;
+        }
+
+        #queryForm label {
+            text-align: right;
+        }
+
+        /*#queryForm :not(label) {
+            justify-self: left;
+            min-width: 120px;
         }*/
     </style>
 }
@@ -36,18 +47,18 @@
 
 <div id="graph"></div>
 <div id="queryForm">
+    <h3>Options:</h3>
     <form method="get" action="">
-        <h3>Options:</h3>
         <label for="userName">Last.fm user name:</label>
         <input type="text" name="userName" id="userName" value="@Model.UserName" />
-        <br />
+
         <label for="color">Color:</label>
         <select name="color" id="color">
-            <!option @(Model.Color == ColorChoice.None ? "selected" : "") value="@ColorChoice.None">No color</!option>
+            <!option @(Model.Color == ColorChoice.None ? "selected" : "") value="@ColorChoice.None">Monochrome</!option>
             <!option @(Model.Color == ColorChoice.Artist ? "selected" : "") value="@ColorChoice.Artist">Artist</!option>
             <!option @(Model.Color == ColorChoice.Album ? "selected" : "") value="@ColorChoice.Album">Album</!option>
         </select>
-        <br />
+
         <label for="timeZone">TimeZone:</label>
         <select name="timeZone" id="timeZone">
             @foreach (var tz in Model.TimeZones)
@@ -56,16 +67,23 @@
             <!option @selected value="@tz.Id">@tz.DisplayName (@tz.Id)</!option>
             }
         </select>
-        <br />
-        Time window:
-        <label for="startDate">from </label>
-        <input type="date" name="startDate" id="startDate" value="@($"{Model.StartDate:yyyy-MM-dd}")" />
-        <label for="endDate">to </label>
-        <input type="date" name="endDate" id="endDate" value="@($"{Model.EndDate:yyyy-MM-dd}")" />
-        <br />
+
+        <label for="dates">Time window:</label>
+        <div name="dates" id="dates">
+            <label for="startDate">from </label>
+            <input type="date" name="startDate" id="startDate" value="@($"{Model.StartDate:yyyy-MM-dd}")" />
+            <label for="endDate">to </label>
+            <input type="date" name="endDate" id="endDate" value="@($"{Model.EndDate:yyyy-MM-dd}")" />
+            <span>(optional)</span>
+        </div>
+
+        <br/>
         <input type="submit" />
     </form>
 </div>
 <p>
-    <a href="/">Go back to index.</a>
+    <ul>
+        <li><a href="/Refresh?userName=@Model.UserName">Refresh the data...</a></li>
+        <li><a href="/">Go back to index</a></li>
+    </ul>
 </p>

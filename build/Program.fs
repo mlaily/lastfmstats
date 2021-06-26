@@ -4,7 +4,7 @@ open Fake.IO
 open Fake.DotNet
 open Fake.Core
 
-let esbuildPath = "esbuild/esbuild.exe"
+let esbuildPath = "build/esbuild/esbuild.exe"
 
 type Configuration =
     | Debug

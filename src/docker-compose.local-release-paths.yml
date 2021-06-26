@@ -1,0 +1,7 @@
+version: '3.4'
+
+services:
+  lastfmstats:
+    volumes:
+      - "./../settings.json:/settings/settings.json"
+      - "./../data:/data"

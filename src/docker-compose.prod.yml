@@ -1,0 +1,6 @@
+version: '3.4'
+
+services:
+  lastfmstats:
+    container_name: lastfmstats
+    image: yaurthek/lastfmstats:${TAG:-latest} # https://pubs.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02

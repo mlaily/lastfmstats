@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -14,37 +15,34 @@ namespace LastFmStatsServer
     {
         public static void Main(string[] args)
         {
-            var host = CreateHostBuilder(args).Build();
+            SetCurrentCultures();
 
-            CreateDbIfNotExists(host);
+            const string settingsPathVarName = "APP_SETTINGS_PATH";
+            var settingsPath = Environment.GetEnvironmentVariable(settingsPathVarName) ?? throw new Exception($"{settingsPathVarName} is empty or not set.");
 
-            host.Run();
+            Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration(configure => configure
+                    .AddJsonFile(settingsPath, optional: false, reloadOnChange: true))
+                .ConfigureWebHostDefaults(webBuilder => webBuilder
+                    .UseStartup<Startup>())
+                .Build()
+                .Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
-
-        private static void CreateDbIfNotExists(IHost host)
+        private static void SetCurrentCultures()
         {
-            using (var scope = host.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                try
-                {
-                    var context = services.GetRequiredService<MainContext>();
-                    context.Database.EnsureCreated();
-                    // DbInitializer.Initialize(context);
-                }
-                catch (Exception ex)
-                {
-                    var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "An error occurred creating the DB.");
-                }
-            }
+            CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+
+            var formattingCulture = (CultureInfo)CultureInfo.GetCultureInfo("fr-FR").Clone();
+            formattingCulture.DateTimeFormat.ShortDatePattern = "yyyy-MM-dd";
+            formattingCulture.DateTimeFormat.LongDatePattern = "dddd d MMMM yyyy";
+            formattingCulture.DateTimeFormat.ShortTimePattern = "HH:mm";
+            formattingCulture.DateTimeFormat.LongTimePattern = "HH:mm:ss";
+            formattingCulture.NumberFormat.NumberDecimalSeparator = ".";
+            formattingCulture.NumberFormat.CurrencyDecimalSeparator = ".";
+            formattingCulture.NumberFormat.PercentDecimalSeparator = ".";
+
+            CultureInfo.CurrentCulture = formattingCulture;
         }
     }
 }

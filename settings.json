@@ -1,0 +1,5 @@
+{
+  "General": {
+    "DatabaseConnectionString": "Data Source=/data/main.db"
+  }
+}

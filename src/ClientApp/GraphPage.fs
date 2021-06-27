@@ -20,7 +20,7 @@ module GraphPage =
     |}
 
     let graph = document.getElementById "graph"
-    let graphLoader = WebUtils.getLoader graph 
+    let graphLoader = WebUtils.getLoader graph
 
     let userNameInput = document.querySelector ("#userName") :?> Browser.Types.HTMLInputElement
 
@@ -31,16 +31,20 @@ module GraphPage =
             match WebUtils.getQueryParam "userName" with
             | None -> return None
             | Some userName ->
-                let! userDisplayName = ServerApi.getUserDisplayName (ConsoleLogger.Default) userName
-                match userDisplayName with
-                | None -> return Some (Error $"User '{userName}' not found!") // user not found
-                | Some userDisplayName -> 
-                    // Not much validation for now...
-                    return Some (Ok { userName = userDisplayName
-                                      color = WebUtils.getQueryParam "color"
-                                      timeZone = WebUtils.getQueryParam "timeZone"
-                                      startDate = WebUtils.getQueryParam "startDate"
-                                      endDate = WebUtils.getQueryParam "endDate" })
+                let sanitizedUserName = JS.encodeURIComponent userName
+                if String.IsNullOrEmpty(sanitizedUserName)
+                then return None
+                else 
+                    let! userDisplayName = ServerApi.getUserDisplayName (ConsoleLogger.Default) sanitizedUserName
+                    match userDisplayName with
+                    | None -> return Some (Error userName) // user not found
+                    | Some userDisplayName -> 
+                        // Not much validation for now...
+                        return Some (Ok { userName = userDisplayName
+                                          color = WebUtils.getQueryParam "color"
+                                          timeZone = WebUtils.getQueryParam "timeZone"
+                                          startDate = WebUtils.getQueryParam "startDate"
+                                          endDate = WebUtils.getQueryParam "endDate" })
         }
 
     let generateGraph graph graphQueryParams =
@@ -103,12 +107,22 @@ module GraphPage =
                 })
 
     promise {
-        match! parseQueryParams() with
+        let! parsedQueryParams = parseQueryParams()
+        graph.innerHTML <- "" // Reset "Initializing..." text
+        match parsedQueryParams with
         | None ->
             graph.hidden <- true
             userNameInput.focus()
-        | Some (Error msg) ->
-            graph.innerText <- $"Error. {msg}"
+        | Some (Error userName) ->
+            let errorParagraph = document.createElement "p"
+            errorParagraph.innerText <- $"Error. We don't have any data for '{userName}'.";
+            let linkParagraph = document.createElement "p"
+            let refreshLink : Browser.Types.HTMLAnchorElement = downcast document.createElement "a"
+            refreshLink.innerText <- $"Try to fetch {userName}'s data."
+            refreshLink.href <- $"Refresh?userName={userName}"
+            linkParagraph.appendChild refreshLink |> ignore
+            graph.appendChild errorParagraph |> ignore
+            graph.appendChild linkParagraph |> ignore
             graph.className <- pageStyleClasses.error
             userNameInput.focus()
         | Some (Ok graphQueryParams) ->

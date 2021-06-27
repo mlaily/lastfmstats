@@ -14,6 +14,11 @@
             width: 100%;
         }
 
+        .initializing {
+            color: gray;
+            padding: 16px;
+        }
+
         .error {
             color: red;
             padding: 16px;
@@ -45,7 +50,9 @@
     <script src="js/fable/GraphPage.js" type="module"></script>
 }
 
-<div id="graph"></div>
+<div id="graph">
+    <p class="initializing">Initializing page...</p>
+</div>
 <div id="queryForm">
     <h3>Options:</h3>
     <form method="get" action="">

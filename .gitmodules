@@ -1,0 +1,4 @@
+[submodule "src/Dapper"]
+	path = src/Dapper
+	url = git@github.com:mlaily/Dapper.git
+	branch = patch-720
